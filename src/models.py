@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 
 class Incident(Base):
@@ -21,6 +22,3 @@ class Incident(Base):
     statuspage_notification = Column(Boolean, default=False)
     separate_channel_creation = Column(Boolean, default=False)
     status = Column(String, index=True)
-    
-    
-#class for user-define the user class as well for the Postgre table

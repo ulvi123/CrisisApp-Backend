@@ -2,6 +2,7 @@ from fastapi import Request, HTTPException
 from .config import settings
 import hmac
 import hashlib
+import json
 
 
 async def verify_slack_request(
@@ -23,18 +24,18 @@ async def verify_slack_request(
 
     if not hmac.compare_digest(my_signature, x_slack_signature):
         raise HTTPException(status_code=400, detail="Invalid request signature")
-    
-    
-async def validate_token(self,cls, values):
-        token = values.get('token')
-        x_slack_signature = values.get('HTTP_X_SLACK_SIGNATURE')
-        slack_request_timestamp = values.get('HTTP_X_SLACK_REQUEST_TIMESTAMP')
-        sig_base = f"v0:{slack_request_timestamp}:{values.get('raw_body')}".encode('utf-8')
-        slack_signing_secret = settings.slack_signing_secret
-        slack_hash = 'v0=' + hmac.new(settings.slack_signing_secret.encode('utf-8'), sig_base, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(slack_hash, x_slack_signature):
-            raise ValueError("Invalid Slack request signature")
-        return values
+
+
+# async def validate_token(self,cls, values):
+#         token = values.get('token')
+#         x_slack_signature = values.get('HTTP_X_SLACK_SIGNATURE')
+#         slack_request_timestamp = values.get('HTTP_X_SLACK_REQUEST_TIMESTAMP')
+#         sig_base = f"v0:{slack_request_timestamp}:{values.get('raw_body')}".encode('utf-8')
+#         slack_signing_secret = settings.slack_signing_secret
+#         slack_hash = 'v0=' + hmac.new(settings.slack_signing_secret.encode('utf-8'), sig_base, hashlib.sha256).hexdigest()
+#         if not hmac.compare_digest(slack_hash, x_slack_signature):
+#             raise ValueError("Invalid Slack request signature")
+#         return values
 
 
 async def slack_challenge_parameter_verification(request: Request):
@@ -49,13 +50,14 @@ async def slack_challenge_parameter_verification(request: Request):
         return {"challenge": body.get("challenge")}
 
 
-async def create_modal_view():
+async def create_modal_view(callback_id: str) -> dict:
     return {
         "type": "modal",
-        "callback_id": "incident_form",
+        "callback_id": callback_id,
         "title": {"type": "plain_text", "text": "Report Incident"},
         "submit": {"type": "plain_text", "text": "Submit"},
         "close": {"type": "plain_text", "text": "Cancel"},
+        "private_metadata": json.dumps({"callback_id": callback_id}),
         "blocks": [
             {
                 "type": "section",
@@ -82,6 +84,7 @@ async def create_modal_view():
                             "value": "product_2",
                         },
                     ],
+                    "action_id": "affected_products_action"
                 },
             },
             {
@@ -102,6 +105,7 @@ async def create_modal_view():
                         },
                         {"text": {"type": "plain_text", "text": "Low"}, "value": "low"},
                     ],
+                    "action_id": "severity_action"
                 },
             },
             {
@@ -121,6 +125,7 @@ async def create_modal_view():
                             "value": "team_2",
                         },
                     ],
+                    "action_id": "suspected_owning_team_action"
                 },
             },
             {
@@ -129,6 +134,7 @@ async def create_modal_view():
                 "element": {
                     "type": "plain_text_input",
                     "placeholder": {"type": "plain_text", "text": "Enter start time"},
+                    "action_id": "start_time_action"
                 },
                 "label": {"type": "plain_text", "text": "Start Time", "emoji": True},
             },
@@ -146,6 +152,7 @@ async def create_modal_view():
                             "value": "p1_customer_affected",
                         }
                     ],
+                    "action_id": "p1_customer_affected_action"
                 },
                 "label": {
                     "type": "plain_text",
@@ -157,8 +164,7 @@ async def create_modal_view():
                 "type": "input",
                 "block_id": "suspected_affected_components",
                 "label": {
-                    "type": "plain_text",
-                    "text": "Suspected Affected Components",
+                    "type": "plain_text", "text": "Suspected Affected Components",
                 },
                 "element": {
                     "type": "static_select",
@@ -173,18 +179,27 @@ async def create_modal_view():
                             "value": "component_2",
                         },
                     ],
+                    "action_id": "suspected_affected_components_action"
                 },
             },
             {
                 "type": "input",
                 "block_id": "description",
-                "element": {"type": "plain_text_input", "multiline": True},
+                "element": {
+                    "type": "plain_text_input",
+                    "multiline": True,
+                    "action_id": "description_action"
+                },
                 "label": {"type": "plain_text", "text": "Description", "emoji": True},
             },
             {
                 "type": "input",
                 "block_id": "message_for_sp",
-                "element": {"type": "plain_text_input", "multiline": True},
+                "element": {
+                    "type": "plain_text_input",
+                    "multiline": True,
+                    "action_id": "message_for_sp_action"
+                },
                 "label": {
                     "type": "plain_text",
                     "text": "Message for SP",
@@ -213,6 +228,7 @@ async def create_modal_view():
                             "value": "separate_channel_creation",
                         },
                     ],
+                    "action_id": "flags_for_statuspage_notification_action"
                 },
                 "label": {"type": "plain_text", "text": "Flags", "emoji": True},
             },
