@@ -26,18 +26,6 @@ async def verify_slack_request(
         raise HTTPException(status_code=400, detail="Invalid request signature")
 
 
-# async def validate_token(self,cls, values):
-#         token = values.get('token')
-#         x_slack_signature = values.get('HTTP_X_SLACK_SIGNATURE')
-#         slack_request_timestamp = values.get('HTTP_X_SLACK_REQUEST_TIMESTAMP')
-#         sig_base = f"v0:{slack_request_timestamp}:{values.get('raw_body')}".encode('utf-8')
-#         slack_signing_secret = settings.slack_signing_secret
-#         slack_hash = 'v0=' + hmac.new(settings.slack_signing_secret.encode('utf-8'), sig_base, hashlib.sha256).hexdigest()
-#         if not hmac.compare_digest(slack_hash, x_slack_signature):
-#             raise ValueError("Invalid Slack request signature")
-#         return values
-
-
 async def slack_challenge_parameter_verification(request: Request):
     try:
         body = await request.json()
@@ -246,3 +234,55 @@ async def create_modal_view(callback_id: str) -> dict:
             },
         ],
     }
+
+async def open_modal() -> dict:
+    return {
+        "type": "modal",
+        "callback_id": "fetch_data_modal",
+        "title": {"type": "plain_text", "text": "Fetch Incident Data"},
+        "submit": {"type": "plain_text", "text": "Submit"},
+        "close": {"type": "plain_text", "text": "Cancel"},
+        "blocks": [
+            {
+                "type": "section",
+                "block_id": "section1",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "Please select an option to fetch the incident data:",
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "fetch_option",
+                "label": {"type": "plain_text", "text": "Fetch Option"},
+                "element": {
+                    "type": "static_select",
+                    "action_id": "fetch_option_action",
+                    "placeholder": {"type": "plain_text", "text": "Select an option"},
+                    "options": [
+                        {
+                            "text": {"type": "plain_text", "text": "Single Incident"},
+                            "value": "single_incident",
+                        },
+                        {
+                            "text": {"type": "plain_text", "text": "All Incidents"},
+                            "value": "all_incidents",
+                        },
+                    ],
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "incident_id",
+                "label": {"type": "plain_text", "text": "Incident ID"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "incident_id_action",
+                    "placeholder": {"type": "plain_text", "text": "Enter Incident ID"},
+                },
+                "optional": True
+            }
+        ]
+    }
+ 
+ 

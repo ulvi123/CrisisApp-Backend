@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Header, status, Depends
-import os
-from sqlalchemy.orm import Session
+from typing import List
+from sqlalchemy.orm import Session 
 from src import models
 from src import schemas
 from src.database import get_db
@@ -11,7 +11,7 @@ import requests
 import json
 from pydantic import ValidationError
 from datetime import datetime
-
+from src.helperFunctions.opsgenie import create_alert
 
 router = APIRouter()
 
@@ -140,7 +140,6 @@ async def slack_interactions(
                 print("Extracted start_time_str:", start_time_str)  # Debug start_time_str
                 if start_time_str is None:
                     raise HTTPException(status_code=400, detail="Missing start time")
-
                 try:
                     start_time = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M:%S')  # Adjust the format as needed
                 except ValueError:
@@ -218,7 +217,18 @@ async def slack_interactions(
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)
-
+            
+            #Opsgenie integration
+            try:
+                await create_alert(db_incident)
+            except Exception as e:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            
+            
+            #Jira integration-the logic is not implmented yet
+            
+            
+            
             # Return the response to slack user in a form of a json
             return JSONResponse(
                 status_code=201,
@@ -234,3 +244,20 @@ async def slack_interactions(
             )
 
     return JSONResponse(status_code=404, content={"detail": "Event type not found"})
+
+
+#add response model for the single incident
+# @router.get("/slack/interactions")
+# async def get_all_incidents(db:Session=Depends(get_db)):
+#     incidents = db.query(models.Incident).all()
+#     return incidents
+
+
+# @router.get("/slack/interactions",response_model=schemas.IncidentOut)
+# async def read_incident(incident_id:int, db:Session=Depends(get_db)):
+#     single_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+#     if not single_incident:
+#         raise HTTPException(status_code=400,detail=f"The incident with {incident_id} was not found")
+    
+#     return single_incident
+    
