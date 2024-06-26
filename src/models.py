@@ -14,7 +14,7 @@ class Incident(Base):
     suspected_owning_team = Column(String, index=True)
     start_time = Column(
         String, index=True
-    )
+    )#changed from string to datetime, test and ensure it works
     p1_customer_affected = Column(Boolean, default=False)
     suspected_affected_components = Column(String, index=True)
     description = Column(String, index=True)

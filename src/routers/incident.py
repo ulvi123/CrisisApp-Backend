@@ -10,7 +10,27 @@ import json
 router = APIRouter()
 
 
-# Endpoint to handle slash commands
+# API endpoint for handling Slack slash commands. This endpoint is responsible for
+# handling incidents reported through Slack's slash commands feature.
+#
+# Slash commands are a way for Slack users to interact with external integrations
+# by typing a slash command in a channel, private group, or direct message.
+#
+# In this case, the /incident slash command is used to report incidents to the
+# incident management system. When a user types /incident, a modal dialog is
+# presented to the user to collect information about the incident. The user
+# can then fill in the details of the incident and submit it to the system.
+#
+# This endpoint receives HTTP POST requests from Slack with the details of the
+# slash command and its associated payload. The endpoint verifies the
+# authenticity of the request using a cryptographic signature sent by Slack.
+# If the request is valid, the endpoint processes the payload and either
+# creates a new incident or updates an existing one in the system.
+#
+# The endpoint is designed to be used with FastAPI, a modern, fast (high-performance)
+# web framework for building APIs with Python 3.6+ based on standard Python type hints.
+# FastAPI automatically generates an OpenAPI specification for the API, which can
+# be used by clients to interact with the API.
 @router.post("/slack/commands")
 async def incident(
     request: Request,
@@ -42,7 +62,7 @@ async def incident(
             status_code=400, detail=f"Failed to parse form data: {str(e)}"
         )
 
-    # Handle URL verification
+    # Handle URL verification with slack
     if form_data.get("type") == "url_verification":
         return {"challenge": form_data.get("challenge")}
 
@@ -131,9 +151,119 @@ async def slack_interactions(
                 except ValueError:
                     raise HTTPException(status_code=400, detail="Invalid start time format")
 
-#     return JSONResponse(content={})
+                # Building the incident object
+                incident_data = {
+                    "affected_products": state_values.get("affected_products", {})
+                    .get("affected_products_action", {})
+                    .get("selected_option", {})
+                    .get("value"),
+                    "severity": state_values.get("severity", {})
+                    .get("severity_action", {})
+                    .get("selected_option", {})
+                    .get("value"),
+                    "suspected_owning_team": state_values.get(
+                        "suspected_owning_team", {}
+                    )
+                    .get("suspected_owning_team_action", {})
+                    .get("selected_options", [{}])[0]
+                    .get("value"),
+                    "start_time": start_time.isoformat(),  # Convert datetime to string
+                    "p1_customer_affected": "p1_customer_affected"
+                    in [
+                        option.get("value")
+                        for option in state_values.get("p1_customer_affected", {})
+                        .get("p1_customer_affected_action", {})
+                        .get("selected_options", [])
+                    ],
+                    "suspected_affected_components": state_values.get(
+                        "suspected_affected_components", {}
+                    )
+                    .get("suspected_affected_components_action", {})
+                    .get("selected_option", {})
+                    .get("value"),
+                    "description": state_values.get("description", {})
+                    .get("description_action", {})
+                    .get("value"),
+                    "message_for_sp": state_values.get("message_for_sp", {})
+                    .get("message_for_sp_action", {})
+                    .get("value", ""),
+                    "statuspage_notification": "statuspage_notification"
+                    in [
+                        option.get("value")
+                        for option in state_values.get(
+                            "flags_for_statuspage_notification", {}
+                        )
+                        .get("flags_for_statuspage_notification_action", {})
+                        .get("selected_options", [])
+                    ],
+                    "separate_channel_creation": "separate_channel_creation"
+                    in [
+                        option.get("value")
+                        for option in state_values.get(
+                            "flags_for_statuspage_notification", {}
+                        )
+                        .get("flags_for_statuspage_notification_action", {})
+                        .get("selected_options", [])
+                    ],
+                }
+
+                print(
+                    "Incident data:", json.dumps(incident_data, indent=2)
+                )  # Log the incident data for debugging
+
+                incident = schemas.IncidentCreate(**incident_data)
+
+            except ValidationError as e:
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to parse request body: {str(e)}"
+                )
+
+            # Time to save the incident to our postgre database
+            db_incident = models.Incident(**incident.dict())
+            db.add(db_incident)
+            db.commit()
+            db.refresh(db_incident)
+            
+            #Opsgenie integration
+            try:
+                await create_alert(db_incident)
+            except Exception as e:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            
+            
+            #Jira integration-the logic is not implmented yet
+            
+            
+            
+            # Return the response to slack user in a form of a json
+            return JSONResponse(
+                status_code=201,
+                content={
+                    "response_type": "in_channel",
+                    "text": "Incident created successfully",
+                },
+            )
+
+        else:
+            return JSONResponse(
+                status_code=404, content={"detail": "Command or callback ID not found"}
+            )
+
+    return JSONResponse(status_code=404, content={"detail": "Event type not found"})
 
 
-@router.post("/incidents")
-def create_incident():
-    return {"status": "success", "message": "Incident form processed successfully"}
+#add response model for the single incident
+# @router.get("/slack/interactions")
+# async def get_all_incidents(db:Session=Depends(get_db)):
+#     incidents = db.query(models.Incident).all()
+#     return incidents
+
+
+# @router.get("/slack/interactions",response_model=schemas.IncidentOut)
+# async def read_incident(incident_id:int, db:Session=Depends(get_db)):
+#     single_incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+#     if not single_incident:
+#         raise HTTPException(status_code=400,detail=f"The incident with {incident_id} was not found")
+    
+#     return single_incident
+    
