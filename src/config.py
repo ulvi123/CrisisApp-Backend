@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes : int
     opsgenie_api_key: str
     jira_api_key: str
+    jira_email: str
+    jira_server: str
     
     class Config():
         env_file = ".env"
