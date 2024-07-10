@@ -47,148 +47,251 @@ async def create_modal_view(callback_id: str) -> dict:
         "close": {"type": "plain_text", "text": "Cancel"},
         "private_metadata": json.dumps({"callback_id": callback_id}),
         "blocks": [
-            {
-                "type": "section",
-                "block_id": "section1",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Please fill out the following incident form:",
-                },
+        {
+            "type": "section",
+            "block_id": "section1",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Please fill out the following incident form:"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "affected_products",
+            "label": {
+                "type": "plain_text",
+                "text": "Affected Products"
             },
-            {
-                "type": "input",
-                "block_id": "affected_products",
-                "label": {"type": "plain_text", "text": "Affected Products"},
-                "element": {
-                    "type": "static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select products"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": "Product 1"},
-                            "value": "product_1",
-                        },
-                        {
-                            "text": {"type": "plain_text", "text": "Product 2"},
-                            "value": "product_2",
-                        },
-                    ],
-                    "action_id": "affected_products_action"
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "severity",
-                "label": {"type": "plain_text", "text": "Severity"},
-                "element": {
-                    "type": "static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select severity"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": "High"},
-                            "value": "high",
-                        },
-                        {
-                            "text": {"type": "plain_text", "text": "Medium"},
-                            "value": "medium",
-                        },
-                        {"text": {"type": "plain_text", "text": "Low"}, "value": "low"},
-                    ],
-                    "action_id": "severity_action"
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "suspected_owning_team",
-                "label": {"type": "plain_text", "text": "Suspected Owning Team"},
-                "element": {
-                    "type": "multi_static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select teams"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": "Team 1"},
-                            "value": "team_1",
-                        },
-                        {
-                            "text": {"type": "plain_text", "text": "Team 2"},
-                            "value": "team_2",
-                        },
-                    ],
-                    "action_id": "suspected_owning_team_action"
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "start_time",
-                "element": {
-                    "type": "plain_text_input",
-                    "placeholder": {"type": "plain_text", "text": "Enter start time"},
-                    "action_id": "start_time_action"
-                },
-                "label": {"type": "plain_text", "text": "Start Time", "emoji": True},
-            },
-            {
-                "type": "input",
-                "block_id": "p1_customer_affected",
-                "element": {
-                    "type": "checkboxes",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "P1 customer affected",
-                            },
-                            "value": "p1_customer_affected",
-                        }
-                    ],
-                    "action_id": "p1_customer_affected_action"
-                },
-                "label": {
+            "element": {
+                "type": "static_select",
+                "placeholder": {
                     "type": "plain_text",
-                    "text": "P1 Customer Affected",
-                    "emoji": True,
+                    "text": "Select products"
                 },
-            },
-            {
-                "type": "input",
-                "block_id": "suspected_affected_components",
-                "label": {
-                    "type": "plain_text", "text": "Suspected Affected Components",
-                },
-                "element": {
-                    "type": "static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select components"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": "Component 1"},
-                            "value": "component_1",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Product 1"
                         },
-                        {
-                            "text": {"type": "plain_text", "text": "Component 2"},
-                            "value": "component_2",
+                        "value": "product_1"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Product 2"
                         },
-                    ],
-                    "action_id": "suspected_affected_components_action"
-                },
+                        "value": "product_2"
+                    }
+                ],
+                "action_id": "affected_products_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "severity",
+            "label": {
+                "type": "plain_text",
+                "text": "Severity"
             },
-            {
-                "type": "input",
-                "block_id": "description",
-                "element": {
-                    "type": "plain_text_input",
-                    "multiline": True,
-                    "action_id": "description_action"
+            "element": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select severity"
                 },
-                "label": {"type": "plain_text", "text": "Description", "emoji": True},
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "High"
+                        },
+                        "value": "high"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Medium"
+                        },
+                        "value": "medium"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Low"
+                        },
+                        "value": "low"
+                    }
+                ],
+                "action_id": "severity_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "suspected_owning_team",
+            "label": {
+                "type": "plain_text",
+                "text": "Suspected Owning Team"
             },
-            {
-                "type": "input",
-                "block_id": "message_for_sp",
-                "element": {
-                    "type": "plain_text_input",
-                    "multiline": True,
-                    "action_id": "message_for_sp_action"
+            "element": {
+                "type": "multi_static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select teams"
                 },
-                "label": {
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Team 1"
+                        },
+                        "value": "team_1"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Team 2"
+                        },
+                        "value": "team_2"
+                    }
+                ],
+                "action_id": "suspected_owning_team_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "start_time",
+            "label": {
+                "type": "plain_text",
+                "text": "Start Time",
+                "emoji": True
+            },
+            "element": {
+                "type": "datepicker",
+                "action_id": "start_date_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "end_time",
+            "label": {
+                "type": "plain_text",
+                "text": "End Time",
+                "emoji": True
+            },
+            "element": {
+                "type": "datepicker",
+                "action_id": "end_date_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "start_time_picker",
+            "label": {
+                "type": "plain_text",
+                "text": "Start Time Picker",
+                "emoji": True
+            },
+            "element": {
+                "type": "timepicker",
+                "action_id": "start_time_picker_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "end_time_picker",
+            "label": {
+                "type": "plain_text",
+                "text": "End Time Picker",
+                "emoji": True
+            },
+            "element": {
+                "type": "timepicker",
+                "action_id": "end_time_picker_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "p1_customer_affected",
+            "label": {
+                "type": "plain_text",
+                "text": "P1 Customer Affected"
+            },
+            "element": {
+                "type": "checkboxes",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "P1 customer affected"
+                        },
+                        "value": "p1_customer_affected"
+                    }
+                ],
+                "action_id": "p1_customer_affected_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "suspected_affected_components",
+            "label": {
+                "type": "plain_text",
+                "text": "Suspected Affected Components"
+            },
+            "element": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select components"
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Component 1"
+                        },
+                        "value": "component_1"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Component 2"
+                        },
+                        "value": "component_2"
+                    }
+                ],
+                "action_id": "suspected_affected_components_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "description",
+            "label": {
+                "type": "plain_text",
+                "text": "Description"
+            },
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "description_action",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Enter description"
+                }
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "message_for_sp",
+            "label": {
+                "type": "plain_text",
+                "text": "Message for SP"
+            },
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "message_for_sp_action",
+                "placeholder": {
                     "type": "plain_text",
                     "text": "Message for SP",
                     "emoji": True,
@@ -224,8 +327,7 @@ async def create_modal_view(callback_id: str) -> dict:
                 "type": "actions",
                 "block_id": "actionblock789",
                 "elements": [
-    
-                {
+                    {
                         "type": "button",
                         "text": {"type": "plain_text", "text": "Submit"},
                         "value": "click_me_123",

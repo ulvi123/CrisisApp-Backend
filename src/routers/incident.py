@@ -143,70 +143,98 @@ async def slack_interactions(
         print(payload)  # Log the payload for debugging
         return JSONResponse(content={"response_action": "clear"})
 
-                # Extracting  and converting the start_time
-                start_time_str = state_values.get("start_time", {}).get("start_time_action", {}).get("value")
-                print("Extracted start_time_str:", start_time_str)  # Debug start_time_str
-                if start_time_str is None:
-                    raise HTTPException(status_code=400, detail="Missing start time")
+                # Extracting and converting the start_time and end_time
+                start_date = state_values.get("start_time", {}).get("start_date_action", {}).get("selected_date")
+                start_time = state_values.get("start_time_picker", {}).get("start_time_picker_action", {}).get("selected_time")
+                end_date = state_values.get("end_time", {}).get("end_date_action", {}).get("selected_date")
+                end_time = state_values.get("end_time_picker", {}).get("end_time_picker_action", {}).get("selected_time")
+
+                
+                if not start_date or not start_time:
+                    raise HTTPException(status_code=400, detail="Missing start datetime")
+                if not end_date or not end_time:
+                    raise HTTPException(status_code=400, detail="Missing end datetime")
+                
+                # Combine date and time strings
+                start_datetime_str = f"{start_date}T{start_time}:00"
+                end_datetime_str = f"{end_date}T{end_time}:00"
+                
+                #Exception handling
                 try:
-                    start_time = datetime.strptime(start_time_str, '%Y-%m-%dT%H:%M:%S')  # Adjust the format as needed
+                    start_time_obj = datetime.strptime(start_datetime_str, '%Y-%m-%dT%H:%M:%S')
+                    end_time_obj = datetime.strptime(end_datetime_str, '%Y-%m-%dT%H:%M:%S')
                 except ValueError:
-                    raise HTTPException(status_code=400, detail="Invalid start time format")
+                    raise HTTPException(status_code=400, detail="Invalid datetime format")
 
                 # Building the incident object
+                # incident_data = {
+                #     "affected_products": state_values.get("affected_products", {})
+                #     .get("affected_products_action", {})
+                #     .get("selected_option", {})
+                #     .get("value"),
+                #     "severity": state_values.get("severity", {})
+                #     .get("severity_action", {})
+                #     .get("selected_option", {})
+                #     .get("value"),
+                #     "suspected_owning_team": state_values.get(
+                #         "suspected_owning_team", {}
+                #     )
+                #     .get("suspected_owning_team_action", {})
+                #     .get("selected_options", [{}])[0]
+                #     .get("value"),
+                #     "start_time": start_time.isoformat(),  # Convert datetime to string
+                #     "p1_customer_affected": "p1_customer_affected"
+                #     in [
+                #         option.get("value")
+                #         for option in state_values.get("p1_customer_affected", {})
+                #         .get("p1_customer_affected_action", {})
+                #         .get("selected_options", [])
+                #     ],
+                #     "suspected_affected_components": state_values.get(
+                #         "suspected_affected_components", {}
+                #     )
+                #     .get("suspected_affected_components_action", {})
+                #     .get("selected_option", {})
+                #     .get("value"),
+                #     "description": state_values.get("description", {})
+                #     .get("description_action", {})
+                #     .get("value"),
+                #     "message_for_sp": state_values.get("message_for_sp", {})
+                #     .get("message_for_sp_action", {})
+                #     .get("value", ""),
+                #     "statuspage_notification": "statuspage_notification"
+                #     in [
+                #         option.get("value")
+                #         for option in state_values.get(
+                #             "flags_for_statuspage_notification", {}
+                #         )
+                #         .get("flags_for_statuspage_notification_action", {})
+                #         .get("selected_options", [])
+                #     ],
+                #     "separate_channel_creation": "separate_channel_creation"
+                #     in [
+                #         option.get("value")
+                #         for option in state_values.get(
+                #             "flags_for_statuspage_notification", {}
+                #         )
+                #         .get("flags_for_statuspage_notification_action", {})
+                #         .get("selected_options", [])
+                #     ],
+                # }
+                
+                
                 incident_data = {
-                    "affected_products": state_values.get("affected_products", {})
-                    .get("affected_products_action", {})
-                    .get("selected_option", {})
-                    .get("value"),
-                    "severity": state_values.get("severity", {})
-                    .get("severity_action", {})
-                    .get("selected_option", {})
-                    .get("value"),
-                    "suspected_owning_team": state_values.get(
-                        "suspected_owning_team", {}
-                    )
-                    .get("suspected_owning_team_action", {})
-                    .get("selected_options", [{}])[0]
-                    .get("value"),
-                    "start_time": start_time.isoformat(),  # Convert datetime to string
-                    "p1_customer_affected": "p1_customer_affected"
-                    in [
-                        option.get("value")
-                        for option in state_values.get("p1_customer_affected", {})
-                        .get("p1_customer_affected_action", {})
-                        .get("selected_options", [])
-                    ],
-                    "suspected_affected_components": state_values.get(
-                        "suspected_affected_components", {}
-                    )
-                    .get("suspected_affected_components_action", {})
-                    .get("selected_option", {})
-                    .get("value"),
-                    "description": state_values.get("description", {})
-                    .get("description_action", {})
-                    .get("value"),
-                    "message_for_sp": state_values.get("message_for_sp", {})
-                    .get("message_for_sp_action", {})
-                    .get("value", ""),
-                    "statuspage_notification": "statuspage_notification"
-                    in [
-                        option.get("value")
-                        for option in state_values.get(
-                            "flags_for_statuspage_notification", {}
-                        )
-                        .get("flags_for_statuspage_notification_action", {})
-                        .get("selected_options", [])
-                    ],
-                    "separate_channel_creation": "separate_channel_creation"
-                    in [
-                        option.get("value")
-                        for option in state_values.get(
-                            "flags_for_statuspage_notification", {}
-                        )
-                        .get("flags_for_statuspage_notification_action", {})
-                        .get("selected_options", [])
-                    ],
+                    "affected_products": state_values.get("affected_products", {}).get("affected_products_action", {}).get("selected_option", {}).get("value"),
+                    "severity": state_values.get("severity", {}).get("severity_action", {}).get("selected_option", {}).get("value"),
+                    "suspected_owning_team": state_values.get("suspected_owning_team", {}).get("suspected_owning_team_action", {}).get("selected_options", [{}])[0].get("value"),
+                    "start_time": start_time_obj.isoformat(),  # Convert datetime to string
+                    "end_time": end_time_obj.isoformat(),  # Convert datetime to string
+                    "p1_customer_affected": any(option.get("value") == "p1_customer_affected" for option in state_values.get("p1_customer_affected", {}).get("p1_customer_affected_action", {}).get("selected_options", [])),
+                    "suspected_affected_components": state_values.get("suspected_affected_components", {}).get("suspected_affected_components_action", {}).get("selected_option", {}).get("value"),
+                    "description": state_values.get("description", {}).get("description_action", {}).get("value"),
+                    "message_for_sp": state_values.get("message_for_sp", {}).get("message_for_sp_action", {}).get("value", ""),
+                    "statuspage_notification": any(option.get("value") == "statuspage_notification" for option in state_values.get("flags_for_statuspage_notification", {}).get("flags_for_statuspage_notification_action", {}).get("selected_options", [])),
+                    "separate_channel_creation": any(option.get("value") == "separate_channel_creation" for option in state_values.get("flags_for_statuspage_notification", {}).get("flags_for_statuspage_notification_action", {}).get("selected_options", [])),
                 }
 
                 print(
@@ -226,6 +254,8 @@ async def slack_interactions(
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)  
+            
+            
             #Opsgenie integration
             try:
                 await create_alert(db_incident)
