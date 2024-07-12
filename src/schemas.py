@@ -42,6 +42,7 @@ class IncidentBase(BaseModel):
     severity: str
     suspected_owning_team: str
     start_time: datetime
+    end_time: datetime
     p1_customer_affected: bool
     suspected_affected_components: str
     description: str

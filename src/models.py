@@ -16,8 +16,8 @@ class Incident(Base):
     affected_products = Column(String(50), index=True, nullable=False)
     severity = Column(String(50), index=True, nullable=False)
     suspected_owning_team = Column(String(50), index=True, nullable=False)
-    start_time = Column(DateTime, index=True, nullable=False)
-    end_time = Column(DateTime, index=True, nullable=True)  # Nullable field
+    start_time = Column(DateTime,  nullable=False)
+    end_time = Column(DateTime,  nullable=False)  # Nullable field
     p1_customer_affected = Column(Boolean, default=False, nullable=False)
     suspected_affected_components = Column(String(50), index=True, nullable=False)
     description = Column(String(250), index=True, nullable=False)

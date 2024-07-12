@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     SLACK_SIGNING_SECRET: str
     NGROK_AUTHTOKEN: str
     SLACK_BOT_TOKEN: str
+    SLACK_GENERAL_OUTAGES_CHANNEL: str
     SLACK_VERIFICATION_TOKEN: str
     database_hostname: str
     database_port: str
