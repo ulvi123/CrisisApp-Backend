@@ -86,196 +86,290 @@ async def get_channel_id(channel_name: str) -> str:
 async def create_modal_view(callback_id: str, options: dict) -> dict:
     return {
         "type": "modal",
-        "callback_id": callback_id,
-        "title": {"type": "plain_text", "text": "Report Incident"},
-        "submit": {"type": "plain_text", "text": "Submit"},
-        "close": {"type": "plain_text", "text": "Cancel"},
-        "private_metadata": json.dumps({"callback_id": callback_id}),
-        "blocks": [
-            {
-                "type": "section",
-                "block_id": "section1",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Please fill out the following incident form:",
-                },
+    "callback_id": "incident_form",
+    "title": {"type": "plain_text", "text": "Report Incident"},
+    "submit": {"type": "plain_text", "text": "Submit"},
+    "close": {"type": "plain_text", "text": "Cancel"},
+    "blocks": [
+        {
+            "type": "section",
+            "block_id": "section1",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Please fill out the following incident form:"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "affected_products",
+            "label": {
+                "type": "plain_text",
+                "text": "Affected Products"
             },
-            {
-                "type": "input",
-                "block_id": "affected_products",
-                "label": {"type": "plain_text", "text": "Affected Products"},
-                "element": {
-                    "type": "multi_static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select products"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": item["text"]},
-                            "value": item["value"],
-                        }
-                        for item in options["affected_products"]
-                    ],
-                    "action_id": "affected_products_action",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "severity",
-                "label": {"type": "plain_text", "text": "Severity"},
-                "element": {
-                    "type": "multi_static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select severity"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": item["text"]},
-                            "value": item["value"],
-                        }
-                        for item in options["severity"]
-                    ],
-                    "action_id": "severity_action",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "suspected_owning_team",
-                "label": {"type": "plain_text", "text": "Suspected Owning Team"},
-                "element": {
-                    "type": "multi_static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select teams"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": item["text"]},
-                            "value": item["value"],
-                        }
-                        for item in options["suspected_owning_team"]
-                    ],
-                    "action_id": "suspected_owning_team_action",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "start_time",
-                "label": {"type": "plain_text", "text": "Start Time", "emoji": True},
-                "element": {"type": "datepicker", "action_id": "start_date_action"},
-            },
-            {
-                "type": "input",
-                "block_id": "end_time",
-                "label": {"type": "plain_text", "text": "End Time", "emoji": True},
-                "element": {"type": "datepicker", "action_id": "end_date_action"},
-            },
-            {
-                "type": "input",
-                "block_id": "start_time_picker",
-                "label": {
+            "element": {
+                "type": "multi_static_select",
+                "placeholder": {
                     "type": "plain_text",
-                    "text": "Start Time Picker",
-                    "emoji": True,
+                    "text": "Select products"
                 },
-                "element": {
-                    "type": "timepicker",
-                    "action_id": "start_time_picker_action",
-                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Betbuilder"
+                        },
+                        "value": "Betbuilder"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Betvision"
+                        },
+                        "value": "Betvision"
+                    }
+                ],
+                "action_id": "affected_products_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "severity",
+            "label": {
+                "type": "plain_text",
+                "text": "Severity"
             },
-            {
-                "type": "input",
-                "block_id": "end_time_picker",
-                "label": {
+            "element": {
+                "type": "static_select",
+                "placeholder": {
                     "type": "plain_text",
-                    "text": "End Time Picker",
-                    "emoji": True,
+                    "text": "Select severity"
                 },
-                "element": {
-                    "type": "timepicker",
-                    "action_id": "end_time_picker_action",
-                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "High"
+                        },
+                        "value": "high"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Medium"
+                        },
+                        "value": "medium"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Low"
+                        },
+                        "value": "low"
+                    }
+                ],
+                "action_id": "severity_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "suspected_owning_team",
+            "label": {
+                "type": "plain_text",
+                "text": "Suspected Owning Team"
             },
-            {
-                "type": "input",
-                "block_id": "p1_customer_affected",
-                "label": {"type": "plain_text", "text": "P1 Customer Affected"},
-                "element": {
-                    "type": "checkboxes",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "P1 customer affected",
-                            },
-                            "value": "p1_customer_affected",
-                        }
-                    ],
-                    "action_id": "p1_customer_affected_action",
-                },
-            },
-            {
-                "type": "input",
-                "block_id": "suspected_affected_components",
-                "label": {
+            "element": {
+                "type": "multi_static_select",
+                "placeholder": {
                     "type": "plain_text",
-                    "text": "Suspected Affected Components",
+                    "text": "Select teams"
                 },
-                "element": {
-                    "type": "static_select",
-                    "placeholder": {"type": "plain_text", "text": "Select components"},
-                    "options": [
-                        {
-                            "text": {"type": "plain_text", "text": "Component 1"},
-                            "value": "component_1",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "SBMI"
                         },
-                        {
-                            "text": {"type": "plain_text", "text": "Component 2"},
-                            "value": "component_2",
+                        "value": "SBMI"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Multibet"
                         },
-                    ],
-                    "action_id": "suspected_affected_components_action",
-                },
+                        "value": "Multibet"
+                    }
+                ],
+                "action_id": "suspected_owning_team_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "start_time",
+            "label": {
+                "type": "plain_text",
+                "text": "Start Time",
+                "emoji": True
             },
-            {
-                "type": "input",
-                "block_id": "description",
-                "label": {"type": "plain_text", "text": "Description"},
-                "element": {
-                    "type": "plain_text_input",
-                    "multiline": True,
-                    "action_id": "description_action",
-                    "placeholder": {"type": "plain_text", "text": "Enter description"},
-                },
+            "element": {
+                "type": "datepicker",
+                "action_id": "start_date_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "end_time",
+            "label": {
+                "type": "plain_text",
+                "text": "End Time",
+                "emoji": True
             },
-            {
-                "type": "input",
-                "block_id": "message_for_sp",
-                "label": {"type": "plain_text", "text": "Message for SP"},
-                "element": {
-                    "type": "plain_text_input",
-                    "multiline": True,
-                    "action_id": "message_for_sp_action",
-                    "placeholder": {"type": "plain_text", "text": "Enter message"},
-                },
+            "element": {
+                "type": "datepicker",
+                "action_id": "end_date_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "start_time_picker",
+            "label": {
+                "type": "plain_text",
+                "text": "Start Time Picker",
+                "emoji": True
             },
-            {
-                "type": "input",
-                "block_id": "flags_for_statuspage_notification",
-                "label": {"type": "plain_text", "text": "Flags"},
-                "element": {
-                    "type": "checkboxes",
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Statuspage Notification",
-                            },
-                            "value": "statuspage_notification",
+            "element": {
+                "type": "timepicker",
+                "action_id": "start_time_picker_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "end_time_picker",
+            "label": {
+                "type": "plain_text",
+                "text": "End Time Picker",
+                "emoji": True
+            },
+            "element": {
+                "type": "timepicker",
+                "action_id": "end_time_picker_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "p1_customer_affected",
+            "label": {
+                "type": "plain_text",
+                "text": "P1 Customer Affected"
+            },
+            "element": {
+                "type": "checkboxes",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "P1 customer affected"
                         },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Separate Channel Creation",
-                            },
-                            "value": "separate_channel_creation",
-                        },
-                    ],
-                    "action_id": "flags_for_statuspage_notification_action",
-                },
+                        "value": "p1_customer_affected"
+                    }
+                ],
+                "action_id": "p1_customer_affected_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "suspected_affected_components",
+            "label": {
+                "type": "plain_text",
+                "text": "Suspected Affected Components"
             },
-        ],
+            "element": {
+                "type": "static_select",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Select components"
+                },
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Component 1"
+                        },
+                        "value": "component_1"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Component 2"
+                        },
+                        "value": "component_2"
+                    }
+                ],
+                "action_id": "suspected_affected_components_action"
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "description",
+            "label": {
+                "type": "plain_text",
+                "text": "Description"
+            },
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "description_action",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Enter description"
+                }
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "message_for_sp",
+            "label": {
+                "type": "plain_text",
+                "text": "Message for SP"
+            },
+            "element": {
+                "type": "plain_text_input",
+                "multiline": True,
+                "action_id": "message_for_sp_action",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Enter message"
+                }
+            }
+        },
+        {
+            "type": "input",
+            "block_id": "flags_for_statuspage_notification",
+            "label": {
+                "type": "plain_text",
+                "text": "Flags"
+            },
+            "element": {
+                "type": "checkboxes",
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Statuspage Notification"
+                        },
+                        "value": "statuspage_notification"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Separate Channel Creation"
+                        },
+                        "value": "separate_channel_creation"
+                    }
+                ],
+                "action_id": "flags_for_statuspage_notification_action"
+            }
+        }
+    ]
     }
+ 
+ 
