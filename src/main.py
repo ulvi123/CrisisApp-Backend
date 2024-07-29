@@ -3,6 +3,7 @@ from fastapi import FastAPI,Request,HTTPException,status
 from fastapi.responses import JSONResponse
 from src.routers import incident # type: ignore
 from src.utils import load_options_from_file
+from src.helperFunctions.slack_utils  import test_slack_integration
 import os
 import logging
 
@@ -51,9 +52,5 @@ def root():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(startup_event())
-    
-    
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Shutting down the FastAPI application")
+    asyncio.run(test_slack_integration())
 

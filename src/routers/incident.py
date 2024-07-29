@@ -252,6 +252,7 @@ async def slack_interactions(
             try:
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
+                print(f"New Slack channel created with ID: {channel_id}")
                 
                 #Posting a message to the created channel
                 incident_message = f"New Incident Created:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
@@ -268,6 +269,8 @@ async def slack_interactions(
             print(f"Incident data before Jira ticket creation:")
             print(f"Affected Products: {db_incident.affected_products}")
             print(f"Suspected Owning Team: {db_incident.suspected_owning_team}")
+            print(f"Suspected Affected Components: {db_incident.suspected_affected_components}")
+            print(f"End Time: {db_incident.start_time}")
             
             if db_incident.end_time is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="End time not found")
