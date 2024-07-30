@@ -224,7 +224,8 @@ async def create_modal_view(callback_id: str) -> dict:
                 "type": "actions",
                 "block_id": "actionblock789",
                 "elements": [
-                    {
+    
+                {
                         "type": "button",
                         "text": {"type": "plain_text", "text": "Submit"},
                         "value": "click_me_123",
