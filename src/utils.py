@@ -116,16 +116,16 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Betbuilder"
+                            "text": "BetBuilder"
                         },
-                        "value": "Betbuilder"
+                        "value": "BetBuilder"
                     },
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Betvision"
+                            "text": "BetVision"
                         },
-                        "value": "Betvision"
+                        "value": "BetVision"
                     }
                 ],
                 "action_id": "affected_products_action"
@@ -187,16 +187,16 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "SBMI"
+                            "text": "Fixtures"
                         },
-                        "value": "SBMI"
+                        "value": "Fixtures"
                     },
                     {
                         "text": {
                             "type": "plain_text",
-                            "text": "Multibet"
+                            "text": "Sportsbook Management Integrations"
                         },
-                        "value": "Multibet"
+                        "value": "Sportsbook Management Integrations"
                     }
                 ],
                 "action_id": "suspected_owning_team_action"
