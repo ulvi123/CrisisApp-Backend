@@ -26,29 +26,7 @@ def create_jira_ticket(incident: Incident):
     suspected_owning_team = [team for team in incident.suspected_owning_team]
     affected_products = [product for product in incident.affected_products]
     suspected_affected_components = [component for component in incident.suspected_affected_components]
-    
-    # Ensure fields are lists
-    # incident.suspected_owning_team = [incident.suspected_owning_team] if isinstance(incident.suspected_owning_team, str) else incident.suspected_owning_team
-    # incident.affected_products = [incident.affected_products] if isinstance(incident.affected_products, str) else incident.affected_products
-    # incident.suspected_affected_components = [incident.suspected_affected_components] if isinstance(incident.suspected_affected_components, str) else incident.suspected_affected_components
-    
-    #  # Ensuring that the correct format for multi-option fields
-    # print(f"Suspected Owning Team: {incident.suspected_owning_team}")
-    # print(f"Affected Products: {incident.affected_products}")
-    # print(f"Suspected Affected Components: {incident.suspected_affected_components}")
-    
-    
-    # Version # 2.0.0 - 2023-06-13
-    
-    # incident['suspected_owning_team'] = [incident['suspected_owning_team']] if isinstance(incident['suspected_owning_team'], str) else incident['suspected_owning_team']
-    # incident['affected_products'] = [incident['affected_products']] if isinstance(incident['affected_products'], str) else incident['affected_products']
-    # incident['suspected_affected_components'] = [incident['suspected_affected_components']] if isinstance(incident['suspected_affected_components'], str) else incident['suspected_affected_components']
-    
-    #  # Ensuring that the correct format for multi-option fields
-    # print(f"Suspected Owning Team: {incident['suspected_owning_team']}")
-    # print(f"Affected Products: {incident['affected_products']}")
-    # print(f"Suspected Affected Components: {incident['suspected_affected_components']}")
-
+    # severity = [severity for severity in incident.severity]
     
     issue_dict = {
         'fields': {
@@ -75,6 +53,7 @@ def create_jira_ticket(incident: Incident):
             'customfield_12607': end_time_iso,
             'customfield_17273': [{'value': team} for team in suspected_owning_team],
             'customfield_17272': [{'value': product} for product in affected_products],
+            # 'customfield_11201': [{'value':severity} for severity in severity]
         }
     }
 

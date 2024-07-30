@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src import models
 from src import schemas
 from src.database import get_db
-from src.utils import verify_slack_request, create_modal_view
+from src.utils import verify_slack_request, create_modal_view,load_options_from_file,slack_challenge_parameter_verification
 from starlette.responses import JSONResponse
 from src.config import settings
 import requests
@@ -12,78 +12,99 @@ from pydantic import ValidationError
 from datetime import datetime
 from src.helperFunctions.opsgenie import create_alert
 from src.helperFunctions.jira import create_jira_ticket
-from src.utils import load_options_from_file
+from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+
+
 
 # Load options at application startup
-options = load_options_from_file("options.json")
+options = load_options_from_file("src/options.json")
 
 
-@router.post("/slack/commands")
+@router.post("/slack/commands", status_code=status.HTTP_200_OK)
 async def incident(
     request: Request,
     x_slack_request_timestamp: str = Header(None),
     x_slack_signature: str = Header(None),
 ):
     headers = request.headers
-    print("Headers received:")
+    logger.info("Headers received:")
     for key, value in headers.items():
-        print(f"{key}: {value}")
+        logger.info(f"{key}: {value}")
 
     try:
         await verify_slack_request(
             request, x_slack_signature, x_slack_request_timestamp
         )
     except Exception as e:
+        logger.error(f"Slack request verification failed: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+    
+    #Handling slack parameter verficiation
+    challenge_response = await slack_challenge_parameter_verification(request)
+    if challenge_response:
+        return JSONResponse(challenge_response)
+    
     try:
         form_data = await request.form()
+        print("Form data received:",form_data)
     except Exception as e:
+        print(f"{key}: {value}")
         raise HTTPException(
             status_code=400, detail=f"Failed to parse form data: {str(e)}"
         )
-        
-    print("Form data received:")
+
     for key, value in form_data.items():
         print(f"{key}: {value}")
     
 
-    if form_data.get("type") == "url_verification":
-        return {"challenge": form_data.get("challenge")}
+    # if form_data.get("type") == "url_verification":
+    #     return {"challenge": form_data.get("challenge")}
 
     token = form_data.get("token")
+    print(f"Received token: {token}")
+    print(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
     if token != settings.SLACK_VERIFICATION_TOKEN:
+        logger.error("Invalid token")
         raise HTTPException(status_code=400, detail="Invalid token")
+    
     command = form_data.get("command")
     trigger_id = form_data.get("trigger_id")
 
     if command == "/create-incident":
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}",
+            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
         }
         modal_view = await create_modal_view(callback_id="incident_form", options=options)
         payload = {"trigger_id": trigger_id, "view": modal_view}
-        print(json.dumps(payload, indent=2))  # Log the payload for debugging
+        logger.info(f"Payload: {json.dumps(payload, indent=2)}")  # Log the payload for debugging
 
         try:
             slack_response = requests.post(
-                "https://slack.com/api/views.open", headers=headers, json=payload, timeout=5
+                "https://slack.com/api/views.open", headers=headers, json=payload
             )
             slack_response.raise_for_status()  # Raise an exception for HTTP errors
             slack_response_data = slack_response.json()  # Parse JSON response
         
         except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to open the form: {str(e)}")
             raise HTTPException(
                 status_code=400, detail=f"Failed to open the form: {str(e)}"
             )
         except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Slack response: {str(e)}")
             raise HTTPException(
                 status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
             )
 
         if not slack_response_data.get("ok"):
+            logger.error(f"Slack API error: {slack_response_data}")
             raise HTTPException(
                 status_code=400, detail=f"Slack API error: {slack_response_data}"
             )
@@ -156,8 +177,6 @@ async def slack_interactions(
                     raise HTTPException(status_code=400, detail="Invalid datetime format")
                 
                 
-                # Parsing the extracted values and converting them to the appropriate data types
-                # After receiving the Slack payload
                 # Extracting values from the Slack payload
                 affected_products_options = state_values.get("affected_products", {}).get("affected_products_action", {}).get("selected_options", [])
                 affected_products = [option["value"] for option in affected_products_options]
@@ -167,6 +186,12 @@ async def slack_interactions(
 
                 suspected_affected_components_options = state_values.get("suspected_affected_components", {}).get("suspected_affected_components_action", {}).get("selected_options", [])
                 suspected_affected_components = [option["value"] for option in suspected_affected_components_options]
+                
+                # severity = state_values.get("severity", {}).get("severity_action", {}).get("selected_options", [])
+                # # Extracting severity from state_values
+                # # severity = state_values.get("severity", {}).get("severity_action", {}).get("selected_option", {}).get("value", "")
+                # severity = [option["value"] for option in severity]
+                	
 
                 print(f"Extracted values: {affected_products} {suspected_owning_team} {suspected_affected_components}")
 
@@ -180,7 +205,7 @@ async def slack_interactions(
                 
                 incident_data = {
                     "affected_products": affected_products,
-                    "severity": state_values.get("severity", {}).get("severity_action", {}).get("selected_option", {}).get("value"),
+                    "severity": "",
                     "suspected_owning_team": suspected_owning_team,
                     "start_time": start_time_obj.isoformat(),
                     "end_time": end_time_obj.isoformat(),
@@ -216,13 +241,30 @@ async def slack_interactions(
                     status_code=400, detail=f"Failed to parse request body: {str(e)}"
                 )
             
+            
             # Time to save the incident to our postgresql database
             db_incident = models.Incident(**incident.dict())
             db.add(db_incident)
             db.commit()
-            db.refresh(db_incident) 
+            db.refresh(db_incident)
             
-            # Add these debug print statements here
+            # Slack channel creation integration here
+            try:
+                channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
+                channel_id = await create_slack_channel(channel_name)
+                
+                #Posting a message to the created channel
+                incident_message = f"New Incident Created:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
+                await post_message_to_slack(channel_id, incident_message)
+                
+                #Posting message to general channel
+                general_outages_message = f"New Incident Created in #{channel_name}:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}"
+                await post_message_to_slack(settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message)
+            
+            except Exception as e:	
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+            
+            # Log the incident data for debug print statements here
             print(f"Incident data before Jira ticket creation:")
             print(f"Affected Products: {db_incident.affected_products}")
             print(f"Suspected Owning Team: {db_incident.suspected_owning_team}")
@@ -235,16 +277,8 @@ async def slack_interactions(
             except Exception as e:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
             
-            #Jira integration-the logic is not implemented yet
-            # try:
-            #     incident = db.query(Incident).filter(Incident.id == db_incident.id).first()
-            #     if not incident:
-            #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
-            #     issue = create_jira_ticket(incident)
-            #     return {"issue_key": issue['key']}
-            #     # return {"issue_key": issue.key}
-            # except Exception as e:
-            #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))    
+            
+            # Jira integration 
             try:
                 issue = create_jira_ticket(db_incident)
             except Exception as e:
@@ -252,7 +286,8 @@ async def slack_interactions(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=str(e)
                 )
-            return {"issue_key": issue['key']}
+            return {"incident_id": db_incident.id, "issue_key": issue['key']}
+        
         else:
             return JSONResponse(
                 status_code=404, content={"detail": "Command or callback ID not found"}

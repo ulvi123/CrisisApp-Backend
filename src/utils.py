@@ -6,22 +6,16 @@ from slack_sdk.errors import SlackApiError
 from src.config import settings
 import hmac
 import hashlib
-import time
+import json
+import os
 
-slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
-
-async def load_options_from_file(file_path: str) -> dict:
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File {file_path} does not exist.")
-    
-    with open(file_path, "r") as f:
-        options = json.load(f)
-    
-    return options
 
 async def verify_slack_request(
     request: Request, x_slack_signature: str, x_slack_request_timestamp: str
 ):
+    if not x_slack_request_timestamp or not x_slack_signature:
+        raise HTTPException(status_code=400, detail="Missing request signature")
+    
     body = await request.body()
     sig_base = f"v0:{x_slack_request_timestamp}:{body.decode('utf-8')}"
     my_signature = (
@@ -45,51 +39,23 @@ async def slack_challenge_parameter_verification(request: Request):
     if body.get("type") == "url_verification":
         return {"challenge": body.get("challenge")}
 
-async def post_message_to_slack(channel_id: str, message: str):
-    try:
-        slack_client.chat_postMessage(
-            channel=channel_id,
-            text=message
-        )
-        print(f"Message posted to Slack channel ID {channel_id}")
-    except SlackApiError as e:
-        print(f"Slack API error: {e.response['error']}")  # Logging the error
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Slack API error: {e.response['error']}")
 
-async def create_slack_channel(channel_name: str) -> str:
-    try:
-        response = slack_client.conversations_create(
-            name=channel_name,
-            is_private=True  # True if you want a private channel
-        )
-        channel_id = response["channel"]["id"]
-        print(f"Channel created successfully. Channel ID: {channel_id}")
-        return channel_id
-    except SlackApiError as e:
-        print(f"Slack API error: {e.response['error']}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Slack API error: {e.response['error']}")
+def load_options_from_file(file_path: str) -> dict:
+    assert os.path.exists(file_path), f"File {file_path} does not exist."
+    with open(file_path, 'r') as f:
+        return json.load(f)
+        
+options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
 
-async def get_channel_id(channel_name: str) -> str:
-        try:
-            response = slack_client.conversations_list()
-            for channel in response['channels']:
-                if channel['name'] == channel_name:
-                    print(f"Channel already exists. Channel ID: {channel['id']}")
-                    return channel['id']
-            return None
-        except SlackApiError as e:
-            print(f"Slack API error: {e.response['error']}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Slack API error: {e.response['error']}")
-        time.sleep(1)
-        attempt += 1
 
-async def create_modal_view(callback_id: str, options: dict) -> dict:
+async def create_modal_view(callback_id: str) -> dict:
     return {
-        "type": "modal",
+    "type": "modal",
     "callback_id": "incident_form",
     "title": {"type": "plain_text", "text": "Report Incident"},
     "submit": {"type": "plain_text", "text": "Submit"},
     "close": {"type": "plain_text", "text": "Cancel"},
+    "private_metadata": json.dumps({"callback_id": callback_id}),
     "blocks": [
         {
             "type": "section",
@@ -113,20 +79,23 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     "text": "Select products"
                 },
                 "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "BetBuilder"
-                        },
-                        "value": "BetBuilder"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "BetVision"
-                        },
-                        "value": "BetVision"
-                    }
+                    #Old hardcoded code-keeping it for future,just in case something breaks
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "BetBuilder"
+                    #     },
+                    #     "value": "BetBuilder"
+                    # },
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "BetVision"
+                    #     },
+                    #     "value": "BetVision"
+                    # }
+                    {"text": {"type": "plain_text", "text": item["text"]}, "value": item["value"]}
+                        for item in options["affected_products"]
                 ],
                 "action_id": "affected_products_action"
             }
@@ -145,27 +114,43 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     "text": "Select severity"
                 },
                 "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "High"
-                        },
-                        "value": "high"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Medium"
-                        },
-                        "value": "medium"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Low"
-                        },
-                        "value": "low"
-                    }
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "Major"
+                    #     },
+                    #     "value": "Major"
+                    # },
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "Minor"
+                    #     },
+                    #     "value": "Minor"
+                    # },
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "Moderate"
+                    #     },
+                    #     "value": "Moderate"
+                    # },
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "No issue"
+                    #     },
+                    #     "value": "No issue"
+                    # },
+                    # {
+                    #     "text": {
+                    #         "type": "plain_text",
+                    #         "text": "None"
+                    #     },
+                    #     "value": "None"
+                    # }
+                    {"text": {"type": "plain_text", "text": item["text"]}, "value": item["value"]}
+                        for item in options["severity"]
                 ],
                 "action_id": "severity_action"
             }
@@ -184,20 +169,8 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     "text": "Select teams"
                 },
                 "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Fixtures"
-                        },
-                        "value": "Fixtures"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Sportsbook Management Integrations"
-                        },
-                        "value": "Sportsbook Management Integrations"
-                    }
+                     {"text": {"type": "plain_text", "text": item["text"]}, "value": item["value"]}
+                        for item in options["suspected_owning_team"]
                 ],
                 "action_id": "suspected_owning_team_action"
             }
@@ -289,20 +262,8 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     "text": "Select components"
                 },
                 "options": [
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Component 1"
-                        },
-                        "value": "component_1"
-                    },
-                    {
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Component 2"
-                        },
-                        "value": "component_2"
-                    }
+                    {"text": {"type": "plain_text", "text": item["text"]}, "value": item["value"]}
+                        for item in options["suspected_affected_components"]
                 ],
                 "action_id": "suspected_affected_components_action"
             }
@@ -372,4 +333,7 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
     ]
     }
  
- 
+
+
+
+
