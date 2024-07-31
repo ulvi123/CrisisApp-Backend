@@ -1,29 +1,37 @@
 import os
 import json
 from fastapi import HTTPException, status,Request
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
 from src.config import settings
 import hmac
 import hashlib
 import json
 import os
+import time
+
+
 
 
 async def verify_slack_request(
-    request: Request, x_slack_signature: str, x_slack_request_timestamp: str
+    body: bytes, x_slack_signature: str, x_slack_request_timestamp: str
 ):
     if not x_slack_request_timestamp or not x_slack_signature:
         raise HTTPException(status_code=400, detail="Missing request signature")
     
-    body = await request.body()
-    sig_base = f"v0:{x_slack_request_timestamp}:{body.decode('utf-8')}"
+    current_timestamp = int(time.time())
+    if abs(current_timestamp - int(x_slack_request_timestamp)) > 60 * 5:
+        raise HTTPException(status_code=400, detail="Request timestamp is too old")
+    
+    sig_base = f"v0:{x_slack_request_timestamp}:{body.decode()}"
     my_signature = (
         "v0="
         + hmac.new(
             settings.SLACK_SIGNING_SECRET.encode(), sig_base.encode(), hashlib.sha256
         ).hexdigest()
     )
+
+    print(f"Received signature: {x_slack_signature}")
+    print(f"Computed signature: {my_signature}")
+    print(f"Sig base: {sig_base}")
 
     if not hmac.compare_digest(my_signature, x_slack_signature):
         raise HTTPException(status_code=400, detail="Invalid request signature")

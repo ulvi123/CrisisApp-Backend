@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "loguru",
         "pydantic",
         "sqlalchemy",
         "starlette",

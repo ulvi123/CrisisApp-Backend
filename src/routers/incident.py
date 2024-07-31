@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Header, status, Depends
-from sqlalchemy.orm import Session 
+from pydantic_settings import BaseSettings
+from sqlalchemy.orm import Session  # type: ignore
 from src import models
 from src import schemas
 from src.database import get_db
@@ -15,11 +16,10 @@ from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
 import logging
 
+
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-
 
 
 # Load options at application startup
@@ -33,42 +33,43 @@ async def incident(
     x_slack_signature: str = Header(None),
 ):
     headers = request.headers
-    logger.info("Headers received:")
-    for key, value in headers.items():
-        logger.info(f"{key}: {value}")
+    body = await request.body()
+    
+    # Handle URL verification first
+    try:
+        json_body = json.loads(body)
+        if json_body.get("type") == "url_verification":
+            print("URL verification received")
+            return {"challenge": json_body.get("challenge")}
+    except json.JSONDecodeError:
+        print("Failed to parse JSON body")
 
+    # Then proceed with request verification
     try:
         await verify_slack_request(
             request, x_slack_signature, x_slack_request_timestamp
         )
     except Exception as e:
-        logger.error(f"Slack request verification failed: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     
-    #Handling slack parameter verficiation
-    challenge_response = await slack_challenge_parameter_verification(request)
-    if challenge_response:
-        return JSONResponse(challenge_response)
+    
     
     try:
         form_data = await request.form()
-        print("Form data received:",form_data)
+        print("Form data received:",{form_data})
     except Exception as e:
-        print(f"{key}: {value}")
         raise HTTPException(
             status_code=400, detail=f"Failed to parse form data: {str(e)}"
-        )
+        ) from e
 
     for key, value in form_data.items():
         print(f"{key}: {value}")
-    
 
-    # if form_data.get("type") == "url_verification":
-    #     return {"challenge": form_data.get("challenge")}
-
+    # Verify token
     token = form_data.get("token")
     print(f"Received token: {token}")
     print(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
+    
     if token != settings.SLACK_VERIFICATION_TOKEN:
         logger.error("Invalid token")
         raise HTTPException(status_code=400, detail="Invalid token")
@@ -83,7 +84,7 @@ async def incident(
         }
         modal_view = await create_modal_view(callback_id="incident_form", options=options)
         payload = {"trigger_id": trigger_id, "view": modal_view}
-        logger.info(f"Payload: {json.dumps(payload, indent=2)}")  # Log the payload for debugging
+        print("Payload:", payload)
 
         try:
             slack_response = requests.post(
