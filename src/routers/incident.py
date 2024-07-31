@@ -11,7 +11,7 @@ from src.utils import (
     slack_challenge_parameter_verification,
 )
 from starlette.responses import JSONResponse
-from src.config import settings
+from config import get_settings,Settings
 import requests
 import json
 from pydantic import ValidationError
@@ -23,19 +23,26 @@ import logging
 
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
-
-
 # Load options at application startup
-
 options = load_options_from_file("src/options.json")
 
 
-@router.post("/slack/commands", status_code=status.HTTP_200_OK)
+@router.get("/test-config")
+async def test_config(settings:Settings = Depends(get_settings)):
+    return {
+        "SLACK_SIGNING_SECRET": settings.SLACK_SIGNING_SECRET,
+        "SLACK_VERIFICATION_TOKEN": settings.SLACK_VERIFICATION_TOKEN,
+        "SLACK_BOT_TOKEN": settings.SLACK_BOT_TOKEN,
+        "SLACK_GENERAL_OUTAGES_CHANNEL": settings.SLACK_GENERAL_OUTAGES_CHANNEL
+    }
+
+
+@router.post("/slack/commands")
 async def incident(
     request: Request,
     x_slack_request_timestamp: str = Header(None),
     x_slack_signature: str = Header(None),
+    settings: Settings = Depends(get_settings)
 ):
     headers = request.headers
     body = await request.body()
@@ -74,7 +81,7 @@ async def incident(
     print(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
 
     if token != settings.SLACK_VERIFICATION_TOKEN:
-        logger.error("Invalid token")
+        print("Invalid token")  # Changed from logger.error to print for consistency
         raise HTTPException(status_code=400, detail="Invalid token")
 
     command = form_data.get("command")
@@ -132,6 +139,7 @@ async def slack_interactions(
     db: Session = Depends(get_db),
     x_slack_signature: str = Header(None),
     x_slack_request_timestamp: str = Header(None),
+    settings: Settings = Depends(get_settings)
 ):
     body = await request.body()
     try:

@@ -1,7 +1,7 @@
 import os
 import json
 from fastapi import HTTPException, status,Request
-from src.config import settings
+from config import settings
 import hmac
 import hashlib
 import json

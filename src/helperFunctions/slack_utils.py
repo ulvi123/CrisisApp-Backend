@@ -3,7 +3,7 @@ import time
 from fastapi import HTTPException,status
 from slack_sdk import WebClient # type: ignore
 from slack_sdk.errors import SlackApiError # type: ignore
-from src.config import settings
+from config import settings
 
 slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
 

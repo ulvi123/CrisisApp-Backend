@@ -2,7 +2,7 @@ import base64
 import json
 import requests
 from fastapi import HTTPException, status
-from src.config import settings
+from config import settings
 from src.models import Incident  
 
 

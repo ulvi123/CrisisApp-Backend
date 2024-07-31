@@ -1,5 +1,5 @@
 import requests
-from src.config import settings
+from config import settings
 
 async def create_alert(incident):
     url = "https://api.opsgenie.com/v2/alerts"
