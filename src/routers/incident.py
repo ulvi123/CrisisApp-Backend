@@ -10,7 +10,7 @@ from src.utils import (
     slack_challenge_parameter_verification,
 )
 from starlette.responses import JSONResponse
-from config import get_settings,Settings
+from config import get_settings, Settings
 import requests
 import json
 from pydantic import ValidationError
@@ -19,6 +19,7 @@ from src.helperFunctions.opsgenie import create_alert
 from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
 import logging
+from urllib.parse import parse_qs
 
 
 
@@ -30,39 +31,36 @@ router = APIRouter()
 options = load_options_from_file("options.json")
 
 
-
 @router.post("/slack/commands")
 async def incident(
     request: Request,
     x_slack_request_timestamp: str = Header(None),
     x_slack_signature: str = Header(None),
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
 ):
-    
+
     headers = request.headers
     logger.debug("Headers received:")
     for key, value in headers.items():
         logger.debug(f"{key}: {value}")
-    
+
     # Then proceed with request verification
     try:
         body = await request.body()
-        await verify_slack_request(
-            body, x_slack_signature, x_slack_request_timestamp
-        )
+        await verify_slack_request(body, x_slack_signature, x_slack_request_timestamp,settings)
     except Exception as e:
         logger.error(f"Error verifying request: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e)) from e
-    
+
     # Handle URL verification first
     try:
-        json_body = json.loads(body.decode('utf-8'))
+        json_body = json.loads(body.decode("utf-8"))
         if json_body.get("type") == "url_verification":
             logger.debug("URL verification received")
             return {"challenge": json_body.get("challenge")}
     except json.JSONDecodeError:
         logger.error("Failed to parse JSON body")
-           
+
     # Process form data
     try:
         form_data = await request.form()
@@ -82,7 +80,7 @@ async def incident(
     token = form_data.get("token")
     command = form_data.get("command")
     trigger_id = form_data.get("trigger_id")
-    
+
     logger.debug(f"Received token: {token}")
     logger.debug(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
 
@@ -93,11 +91,9 @@ async def incident(
     if command == "/create-incident":
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
+            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}",
         }
-        modal_view = await create_modal_view(
-            callback_id="incident_form"
-        )
+        modal_view = await create_modal_view(callback_id="incident_form")
         payload = {"trigger_id": trigger_id, "view": modal_view}
         logger.debug(json.dumps(payload, indent=2))
 
@@ -106,7 +102,7 @@ async def incident(
                 "https://slack.com/api/views.open",
                 headers=headers,
                 json=payload,
-                timeout=2
+                timeout=2,
             )
             slack_response.raise_for_status()  # Raise an exception for HTTP errors
             slack_response_data = slack_response.json()  # Parse JSON response
@@ -132,7 +128,7 @@ async def incident(
                 "text": "Incident form opening executed successfully in the fastapi Backend",
             },
         )
-  
+
     return JSONResponse(status_code=404, content={"detail": "Command not found"})
 
 
@@ -142,20 +138,30 @@ async def slack_interactions(
     db: Session = Depends(get_db),
     x_slack_signature: str = Header(None),
     x_slack_request_timestamp: str = Header(None),
-    settings: Settings = Depends(get_settings)
+    settings: Settings = Depends(get_settings),
 ):
     body = await request.body()
+    print(f"Raw body: {body}")
+    
+    # Decode the URL-encoded body
+    decoded_body = parse_qs(body.decode("utf-8"))
+    print(f"Decoded body: {decoded_body}")
+    
+    payload_str = decoded_body.get("payload", [None])[0]
+    if not payload_str:
+        raise HTTPException(status_code=400, detail="Missing payload")
+
     try:
-        payload = json.loads(body.decode("utf-8"))
+        payload = json.loads(payload_str)
+        print(f"Payload: {json.dumps(payload, indent=2)}")
     except json.JSONDecodeError as e:
         raise HTTPException(
             status_code=400, detail=f"Failed to parse request body: {str(e)}"
         ) from e
 
-    await verify_slack_request(request, x_slack_signature, x_slack_request_timestamp)
+    await verify_slack_request(body, x_slack_signature, x_slack_request_timestamp,settings)
 
     token = payload.get("token")
-
     if token != settings.SLACK_VERIFICATION_TOKEN:
         raise HTTPException(status_code=400, detail="Invalid token")
 
@@ -302,19 +308,19 @@ async def slack_interactions(
                 )  # Log the incident data for debugging
 
                 try:
-                    incident = schemas.IncidentCreate(**incident_data)
-                    print(f"Incident data after parsing: {incident}")
+                    parsed_incident = schemas.IncidentCreate(**incident_data)
+                    print(f"Incident data after parsing: {parsed_incident}")
                 except ValidationError as e:
                     raise HTTPException(
                         status_code=400,
                         detail=f"Failed to parse request body: {str(e)}",
-                    )
+                    ) from e
                 # Log the parsed incident data fields
                 print("Incident data before Jira ticket creation:")
-                print(f"Affected Products: {incident.affected_products}")
-                print(f"Suspected Owning Team: {incident.suspected_owning_team}")
+                print(f"Affected Products: {parsed_incident.affected_products}")
+                print(f"Suspected Owning Team: {parsed_incident.suspected_owning_team}")
                 print(
-                    f"Suspected Affected Components: {incident.suspected_affected_components}"
+                    f"Suspected Affected Components: {parsed_incident.suspected_affected_components}"
                 )
 
             except ValidationError as e:
@@ -323,7 +329,7 @@ async def slack_interactions(
                 )
 
             # Time to save the incident to our postgresql database
-            db_incident = models.Incident(**incident.dict())
+            db_incident = models.Incident(**parsed_incident.dict())
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)
@@ -350,7 +356,7 @@ async def slack_interactions(
                 )
 
             # Log the incident data for debug print statements here
-            print(f"Incident data before Jira ticket creation:")
+            print("Incident data before Jira ticket creation:")
             print(f"Affected Products: {db_incident.affected_products}")
             print(f"Suspected Owning Team: {db_incident.suspected_owning_team}")
             print(
