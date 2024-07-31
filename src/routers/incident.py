@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load options at application startup
+
 options = load_options_from_file("src/options.json")
 
 
@@ -82,7 +83,7 @@ async def incident(
             "Content-Type": "application/json",
             "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
         }
-        modal_view = await create_modal_view(callback_id="incident_form", options=options)
+        modal_view = await create_modal_view(callback_id="incident_form",options=options)
         payload = {"trigger_id": trigger_id, "view": modal_view}
         print("Payload:", payload)
 

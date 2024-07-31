@@ -11,6 +11,7 @@ import time
 
 
 
+
 async def verify_slack_request(
     body: bytes, x_slack_signature: str, x_slack_request_timestamp: str
 ):
@@ -48,15 +49,15 @@ async def slack_challenge_parameter_verification(request: Request):
         return {"challenge": body.get("challenge")}
 
 
-def load_options_from_file(file_path: str) -> dict:
+async def load_options_from_file(file_path: str) -> dict:
     assert os.path.exists(file_path), f"File {file_path} does not exist."
     with open(file_path, 'r') as f:
         return json.load(f)
         
-options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
+options = load_options_from_file(os.path.join(os.path.dirname(__file__), "src/options.json"))
 
 
-async def create_modal_view(callback_id: str) -> dict:
+async def create_modal_view(callback_id: str, options: dict) -> dict:
     return {
     "type": "modal",
     "callback_id": "incident_form",
