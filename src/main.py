@@ -6,21 +6,13 @@ from src.utils import load_options_from_file
 from src.helperFunctions.slack_utils  import test_slack_integration
 import os
 import logging
+from fastapi.logger import logger as fastapi_logger
 
 app = FastAPI()
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
-
-#Logging config
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+fastapi_logger.setLevel(logging.DEBUG)
 
 app.include_router(incident.router)
 
@@ -29,11 +21,8 @@ async def startup_event():
     global options
     try:
         options =  load_options_from_file(os.path.join(os.path.dirname(__file__),"options.json"))
-        # logger.info(f"Loading options from: {options}")
-        logger.info("Options loaded successfully")
         # print(options)
     except AssertionError as e:
-        logger.error(str(e))
         print(str(e))
         raise e
     

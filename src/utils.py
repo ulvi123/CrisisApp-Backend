@@ -1,7 +1,7 @@
 import os
 import json
-from fastapi import HTTPException, status,Request
-from config import settings
+from fastapi import HTTPException, status,Request,Depends,Header
+from config import get_settings, Settings
 import hmac
 import hashlib
 import json
@@ -9,11 +9,11 @@ import os
 import time
 
 
-
+settings = get_settings()
 
 
 async def verify_slack_request(
-    body: bytes, x_slack_signature: str, x_slack_request_timestamp: str
+    body: bytes, x_slack_signature: str = Header(None), x_slack_request_timestamp: str=Header(None),
 ):
     if not x_slack_request_timestamp or not x_slack_signature:
         raise HTTPException(status_code=400, detail="Missing request signature")
@@ -35,7 +35,11 @@ async def verify_slack_request(
     print(f"Sig base: {sig_base}")
 
     if not hmac.compare_digest(my_signature, x_slack_signature):
-        raise HTTPException(status_code=400, detail="Invalid request signature")
+        print("Signature mismatch")
+        raise HTTPException(status_code=400, detail="Invalid request signature is detected")
+   
+    print("Signature verified")
+
 
 async def slack_challenge_parameter_verification(request: Request):
     try:

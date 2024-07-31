@@ -19,8 +19,10 @@ from datetime import datetime
 from src.helperFunctions.opsgenie import create_alert
 from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
+
 import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 # Load options at application startup
@@ -45,8 +47,21 @@ async def incident(
     settings: Settings = Depends(get_settings)
 ):
     headers = request.headers
-    body = await request.body()
-
+    logger.debug("Headers received:")
+    for key, value in headers.items():
+        logger.debug(f"{key}: {value}")
+    
+     # Then proceed with request verification
+    try:
+        body = await request.body()
+        await verify_slack_request(
+            request, x_slack_signature, x_slack_request_timestamp
+        )
+    except Exception as e:
+        logger.error(f"Error verifying request: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
+   
+    
     # Handle URL verification first
     try:
         json_body = json.loads(body)
@@ -55,19 +70,17 @@ async def incident(
             return {"challenge": json_body.get("challenge")}
     except json.JSONDecodeError:
         print("Failed to parse JSON body")
-
-    # Then proceed with request verification
-    try:
-        await verify_slack_request(
-            request, x_slack_signature, x_slack_request_timestamp
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-
+         
+   
+        
+    # Process form data
     try:
         form_data = await request.form()
-        print("Form data received:", {form_data})
+        logger.debug("Form data received:")
+        for key, value in form_data.items():
+            logger.debug(f"{key}: {value}")
     except Exception as e:
+        logger.error(f"Error parsing form data: {str(e)}")
         raise HTTPException(
             status_code=400, detail=f"Failed to parse form data: {str(e)}"
         ) from e
@@ -77,11 +90,11 @@ async def incident(
 
     # Verify token
     token = form_data.get("token")
-    print(f"Received token: {token}")
-    print(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
+    logger.debug(f"Received token: {token}")
+    logger.debug(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
 
     if token != settings.SLACK_VERIFICATION_TOKEN:
-        print("Invalid token")  # Changed from logger.error to print for consistency
+        logger.error("Invalid token")
         raise HTTPException(status_code=400, detail="Invalid token")
 
     command = form_data.get("command")
@@ -90,20 +103,19 @@ async def incident(
     if command == "/create-incident":
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}",
+            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
         }
         modal_view = await create_modal_view(
             callback_id="incident_form", options=options
         )
         payload = {"trigger_id": trigger_id, "view": modal_view}
-        print("Payload:", payload)
+        logger.debug(json.dumps(payload, indent=2))
 
         try:
             slack_response = requests.post(
                 "https://slack.com/api/views.open",
                 headers=headers,
                 json=payload,
-                timeout=5,
             )
             slack_response.raise_for_status()  # Raise an exception for HTTP errors
             slack_response_data = slack_response.json()  # Parse JSON response
@@ -129,8 +141,8 @@ async def incident(
                 "text": "Incident form opening executed successfully in the fastapi Backend",
             },
         )
-    else:
-        return JSONResponse(status_code=404, content={"detail": "Command not found"})
+  
+    return JSONResponse(status_code=404, content={"detail": "Command not found"})
 
 
 @router.post("/slack/interactions")
