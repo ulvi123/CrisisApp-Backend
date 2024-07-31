@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Response, HTTPException, Header, status, Depends
 from pydantic_settings import BaseSettings
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session 
 from src import models
 from src import schemas
 from src.database import get_db
@@ -89,24 +89,21 @@ async def incident(
 
         try:
             slack_response = requests.post(
-                "https://slack.com/api/views.open", headers=headers, json=payload
+                "https://slack.com/api/views.open", headers=headers, json=payload,timeout=5
             )
             slack_response.raise_for_status()  # Raise an exception for HTTP errors
             slack_response_data = slack_response.json()  # Parse JSON response
         
         except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to open the form: {str(e)}")
             raise HTTPException(
                 status_code=400, detail=f"Failed to open the form: {str(e)}"
-            )
+            ) from e
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse Slack response: {str(e)}")
             raise HTTPException(
                 status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
-            )
+            ) from e
 
         if not slack_response_data.get("ok"):
-            logger.error(f"Slack API error: {slack_response_data}")
             raise HTTPException(
                 status_code=400, detail=f"Slack API error: {slack_response_data}"
             )
@@ -134,7 +131,7 @@ async def slack_interactions(
     except json.JSONDecodeError as e:
         raise HTTPException(
             status_code=400, detail=f"Failed to parse request body: {str(e)}"
-        )
+        ) from e
 
     await verify_slack_request(request, x_slack_signature, x_slack_request_timestamp)
 
