@@ -13,8 +13,10 @@ app = FastAPI()
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 fastapi_logger.setLevel(logging.DEBUG)
-
 app.include_router(incident.router)
+
+options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
+
 
 @app.on_event("startup")
 async def startup_event():

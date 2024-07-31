@@ -11,9 +11,16 @@ import time
 
 settings = get_settings()
 
+async def load_options_from_file(file_path: str) -> dict:
+    assert os.path.exists(file_path), f"File {file_path} does not exist."
+    with open(file_path, 'r') as f:
+        return json.load(f)
+        
+options = load_options_from_file(os.path.join(os.path.dirname(__file__), "src/options.json"))
+
 
 async def verify_slack_request(
-    body: bytes, x_slack_signature: str = Header(None), x_slack_request_timestamp: str=Header(None),
+    body: bytes, x_slack_signature, x_slack_request_timestamp,
 ):
     if not x_slack_request_timestamp or not x_slack_signature:
         raise HTTPException(status_code=400, detail="Missing request signature")
@@ -53,12 +60,7 @@ async def slack_challenge_parameter_verification(request: Request):
         return {"challenge": body.get("challenge")}
 
 
-async def load_options_from_file(file_path: str) -> dict:
-    assert os.path.exists(file_path), f"File {file_path} does not exist."
-    with open(file_path, 'r') as f:
-        return json.load(f)
-        
-options = load_options_from_file(os.path.join(os.path.dirname(__file__), "src/options.json"))
+
 
 
 async def create_modal_view(callback_id: str, options: dict) -> dict:

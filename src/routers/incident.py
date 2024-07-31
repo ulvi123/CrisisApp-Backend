@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Request, Response, HTTPException, Header, status, Depends
-from pydantic_settings import BaseSettings
+from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
 from sqlalchemy.orm import Session
 from src import models
 from src import schemas
@@ -19,24 +18,17 @@ from datetime import datetime
 from src.helperFunctions.opsgenie import create_alert
 from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
-
 import logging
 
+
+
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
+
+
 # Load options at application startup
-options = load_options_from_file("src/options.json")
+options = load_options_from_file("options.json")
 
-
-@router.get("/test-config")
-async def test_config(settings:Settings = Depends(get_settings)):
-    return {
-        "SLACK_SIGNING_SECRET": settings.SLACK_SIGNING_SECRET,
-        "SLACK_VERIFICATION_TOKEN": settings.SLACK_VERIFICATION_TOKEN,
-        "SLACK_BOT_TOKEN": settings.SLACK_BOT_TOKEN,
-        "SLACK_GENERAL_OUTAGES_CHANNEL": settings.SLACK_GENERAL_OUTAGES_CHANNEL
-    }
 
 
 @router.post("/slack/commands")
@@ -46,21 +38,15 @@ async def incident(
     x_slack_signature: str = Header(None),
     settings: Settings = Depends(get_settings)
 ):
+    
+    body = await request.body()
+    
+    
     headers = request.headers
     logger.debug("Headers received:")
     for key, value in headers.items():
         logger.debug(f"{key}: {value}")
     
-     # Then proceed with request verification
-    try:
-        body = await request.body()
-        await verify_slack_request(
-            request, x_slack_signature, x_slack_request_timestamp
-        )
-    except Exception as e:
-        logger.error(f"Error verifying request: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e)) from e
-   
     
     # Handle URL verification first
     try:
@@ -71,6 +57,18 @@ async def incident(
     except json.JSONDecodeError:
         print("Failed to parse JSON body")
          
+    
+    # Then proceed with request verification
+    try:
+        await verify_slack_request(
+            request, x_slack_signature, x_slack_request_timestamp
+        )
+    except Exception as e:
+        logger.error(f"Error verifying request: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
+   
+    
+   
    
         
     # Process form data
