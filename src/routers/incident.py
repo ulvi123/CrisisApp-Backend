@@ -39,38 +39,30 @@ async def incident(
     settings: Settings = Depends(get_settings)
 ):
     
-    body = await request.body()
-    
-    
     headers = request.headers
     logger.debug("Headers received:")
     for key, value in headers.items():
         logger.debug(f"{key}: {value}")
     
-    
-    # Handle URL verification first
-    try:
-        json_body = json.loads(body)
-        if json_body.get("type") == "url_verification":
-            print("URL verification received")
-            return {"challenge": json_body.get("challenge")}
-    except json.JSONDecodeError:
-        print("Failed to parse JSON body")
-         
-    
     # Then proceed with request verification
     try:
+        body = await request.body()
         await verify_slack_request(
-            request, x_slack_signature, x_slack_request_timestamp
+            body, x_slack_signature, x_slack_request_timestamp
         )
     except Exception as e:
         logger.error(f"Error verifying request: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e)) from e
-   
     
-   
-   
-        
+    # Handle URL verification first
+    try:
+        json_body = json.loads(body.decode('utf-8'))
+        if json_body.get("type") == "url_verification":
+            logger.debug("URL verification received")
+            return {"challenge": json_body.get("challenge")}
+    except json.JSONDecodeError:
+        logger.error("Failed to parse JSON body")
+           
     # Process form data
     try:
         form_data = await request.form()
@@ -88,6 +80,9 @@ async def incident(
 
     # Verify token
     token = form_data.get("token")
+    command = form_data.get("command")
+    trigger_id = form_data.get("trigger_id")
+    
     logger.debug(f"Received token: {token}")
     logger.debug(f"Configured token: {settings.SLACK_VERIFICATION_TOKEN}")
 
@@ -95,16 +90,13 @@ async def incident(
         logger.error("Invalid token")
         raise HTTPException(status_code=400, detail="Invalid token")
 
-    command = form_data.get("command")
-    trigger_id = form_data.get("trigger_id")
-
     if command == "/create-incident":
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}"
         }
         modal_view = await create_modal_view(
-            callback_id="incident_form", options=options
+            callback_id="incident_form"
         )
         payload = {"trigger_id": trigger_id, "view": modal_view}
         logger.debug(json.dumps(payload, indent=2))
@@ -114,6 +106,7 @@ async def incident(
                 "https://slack.com/api/views.open",
                 headers=headers,
                 json=payload,
+                timeout=2
             )
             slack_response.raise_for_status()  # Raise an exception for HTTP errors
             slack_response_data = slack_response.json()  # Parse JSON response
@@ -220,7 +213,7 @@ async def slack_interactions(
                 except ValueError:
                     raise HTTPException(
                         status_code=400, detail="Invalid datetime format"
-                    )
+                    ) from e
 
                 # Extracting values from the Slack payload
                 affected_products_options = (
@@ -391,6 +384,6 @@ async def slack_interactions(
                 status_code=404, content={"detail": "Command or callback ID not found"}
             )
 
-        return JSONResponse(content={"response_action": "clear"})
+    return JSONResponse(content={"response_action": "clear"})
 
     return JSONResponse(status_code=404, content={"detail": "Event type not found"})

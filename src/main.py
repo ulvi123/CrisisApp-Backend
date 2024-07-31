@@ -1,8 +1,8 @@
 import os
-from fastapi import FastAPI,Request,HTTPException,status
+from fastapi import FastAPI,Request
 from fastapi.responses import JSONResponse
 from src.routers import incident # type: ignore
-from src.utils import load_options_from_file
+from src.utils import  initialize_options
 from src.helperFunctions.slack_utils  import test_slack_integration
 import os
 import logging
@@ -15,26 +15,20 @@ logging.basicConfig(level=logging.DEBUG)
 fastapi_logger.setLevel(logging.DEBUG)
 app.include_router(incident.router)
 
-options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
+# options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
 
 
 @app.on_event("startup")
 async def startup_event():
-    global options
-    try:
-        options =  load_options_from_file(os.path.join(os.path.dirname(__file__),"options.json"))
-        # print(options)
-    except AssertionError as e:
-        print(str(e))
-        raise e
+    await initialize_options()
     
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logging.error(f"Unexpected error: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal Server Error"},
-    )
+# @app.exception_handler(Exception)
+# async def global_exception_handler(request: Request, exc: Exception):
+#     logging.error(f"Unexpected error: {exc}")
+#     return JSONResponse(
+#         status_code=500,
+#         content={"detail": "Internal Server Error"},
+#     )
 
 @app.get("/")
 def root():

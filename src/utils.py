@@ -13,10 +13,15 @@ settings = get_settings()
 
 async def load_options_from_file(file_path: str) -> dict:
     assert os.path.exists(file_path), f"File {file_path} does not exist."
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         return json.load(f)
+    
+    # Load options when the application starts
+options = None
         
-options = load_options_from_file(os.path.join(os.path.dirname(__file__), "src/options.json"))
+async def initialize_options():
+    global options
+    options = await load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
 
 
 async def verify_slack_request(
@@ -63,7 +68,7 @@ async def slack_challenge_parameter_verification(request: Request):
 
 
 
-async def create_modal_view(callback_id: str, options: dict) -> dict:
+async def create_modal_view(callback_id: str) -> dict:
     return {
     "type": "modal",
     "callback_id": "incident_form",
@@ -94,7 +99,7 @@ async def create_modal_view(callback_id: str, options: dict) -> dict:
                     "text": "Select products"
                 },
                 "options": [
-                    #Old hardcoded code-keeping it for future,just in case something breaks
+                    # Old hardcoded code-keeping it for future,just in case something breaks
                     # {
                     #     "text": {
                     #         "type": "plain_text",
