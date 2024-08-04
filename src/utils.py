@@ -50,9 +50,9 @@ async def verify_slack_request(
         ).hexdigest()
     )
 
-    print(f"Received signature: {x_slack_signature}")
-    print(f"Computed signature: {my_signature}")
-    print(f"Sig base: {sig_base}")
+    # print(f"Received signature: {x_slack_signature}")
+    # print(f"Computed signature: {my_signature}")
+    # print(f"Sig base: {sig_base}")
 
     if not hmac.compare_digest(my_signature, x_slack_signature):
         print("Signature mismatch")

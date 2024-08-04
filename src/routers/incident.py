@@ -303,30 +303,30 @@ async def slack_interactions(
                     ),
                 }
 
-                print(
-                    "Incident data:", json.dumps(incident_data, indent=4)
-                )  # Log the incident data for debugging
+                # print(
+                #     "Incident data:", json.dumps(incident_data, indent=4)
+                # )  # Log the incident data for debugging
 
                 try:
                     parsed_incident = schemas.IncidentCreate(**incident_data)
-                    print(f"Incident data after parsing: {parsed_incident}")
+                    # print(f"Incident data after parsing: {parsed_incident}")
                 except ValidationError as e:
                     raise HTTPException(
                         status_code=400,
                         detail=f"Failed to parse request body: {str(e)}",
                     ) from e
                 # Log the parsed incident data fields
-                print("Incident data before Jira ticket creation:")
-                print(f"Affected Products: {parsed_incident.affected_products}")
-                print(f"Suspected Owning Team: {parsed_incident.suspected_owning_team}")
-                print(
-                    f"Suspected Affected Components: {parsed_incident.suspected_affected_components}"
-                )
+                # print("Incident data before Jira ticket creation:")
+                # print(f"Affected Products: {parsed_incident.affected_products}")
+                # print(f"Suspected Owning Team: {parsed_incident.suspected_owning_team}")
+                # print(
+                #     f"Suspected Affected Components: {parsed_incident.suspected_affected_components}"
+                # )
 
             except ValidationError as e:
                 raise HTTPException(
                     status_code=400, detail=f"Failed to parse request body: {str(e)}"
-                )
+                ) from e
 
             # Time to save the incident to our postgresql database
             db_incident = models.Incident(**parsed_incident.dict())
@@ -353,9 +353,9 @@ async def slack_interactions(
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                )
+                ) from e
 
-            # Log the incident data for debug print statements here
+            #Log the incident data for debug print statements here
             print("Incident data before Jira ticket creation:")
             print(f"Affected Products: {db_incident.affected_products}")
             print(f"Suspected Owning Team: {db_incident.suspected_owning_team}")
@@ -374,7 +374,7 @@ async def slack_interactions(
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                )
+                ) from e
 
             # Jira integration
             try:
@@ -382,7 +382,7 @@ async def slack_interactions(
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                )
+                ) from e
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
 
         else:
