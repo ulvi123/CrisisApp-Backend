@@ -282,8 +282,6 @@ async def slack_interactions(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 ) from e
     
-
-
             # Slack channel creation integration here
             try:
                 start_api_calls_time = time.time()
@@ -303,8 +301,6 @@ async def slack_interactions(
                 end_api_calls_time = time.time()
                 
                 print(f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds")
-            
-
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
