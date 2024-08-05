@@ -35,13 +35,13 @@ Below Code was used for testing purposes but still is kept for future debugging 
     
 """
 
-# @app.exception_handler(Exception)
-# async def global_exception_handler(request: Request, exc: Exception):
-#     logging.error(f"Unexpected error: {exc}")
-#     return JSONResponse(
-#         status_code=500,
-#         content={"detail": "Internal Server Error"},
-#     )
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.error(f"Unexpected error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 
 
 # options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))

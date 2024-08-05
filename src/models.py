@@ -8,6 +8,26 @@ Base = declarative_base()
 
 
 class Incident(Base):
+    """
+    This class represents a service incident.
+
+    Attributes:
+        __tablename__ (str): The name of the table in the database.
+        id (int): The unique identifier of the incident.
+        affected_products (List[str]): The list of affected products.
+        severity (str): The severity of the incident.
+        suspected_owning_team (List[str]): The list of suspected owning teams.
+        start_time (datetime): The start time of the incident.
+        end_time (datetime): The end time of the incident.
+        p1_customer_affected (bool): Whether the incident affects P1 customers.
+        suspected_affected_components (List[str]): The list of suspected affected components.
+        description (str): The description of the incident.
+        message_for_sp (str): The message for the service provider.
+        statuspage_notification (bool): Whether a notification should be sent to the statuspage.
+        separate_channel_creation (bool): Whether a separate channel should be created.
+        status (str): The status of the incident.
+        created_at (datetime): The creation time of the incident.
+    """
     __tablename__ = "service_incidents"
     id = Column(Integer, primary_key=True, index=True)
     affected_products = Column(ARRAY(String), nullable=False)

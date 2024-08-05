@@ -7,7 +7,7 @@ class IncidentBase(BaseModel):
     """Base model for incident."""
 
     affected_products: List[str]
-    severity: str
+    severity: List[str]
     suspected_owning_team: List[str]
     start_time: datetime
     end_time: datetime
