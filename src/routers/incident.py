@@ -19,10 +19,10 @@ from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
 import logging
 from urllib.parse import parse_qs
-from pydantic import BaseModel,ValidationError
+from pydantic import BaseModel, ValidationError
 import time
-schemas.IncidentResponse.Config()
 
+schemas.IncidentResponse.Config()
 
 
 logger = logging.getLogger(__name__)
@@ -49,12 +49,13 @@ async def create_incident(
     # Then proceed with request verification
     try:
         body = await request.body()
-        await verify_slack_request(body, x_slack_signature, x_slack_request_timestamp,settings)
+        await verify_slack_request(
+            body, x_slack_signature, x_slack_request_timestamp, settings
+        )
     except Exception as e:
         logger.error(f"Error verifying request: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e)) from e
 
- 
     # Process form data
     try:
         form_data = await request.form()
@@ -149,7 +150,9 @@ async def slack_interactions(
             status_code=400, detail=f"Failed to parse request body: {str(e)}"
         ) from e
 
-    await verify_slack_request(body, x_slack_signature, x_slack_request_timestamp,settings)
+    await verify_slack_request(
+        body, x_slack_signature, x_slack_request_timestamp, settings
+    )
 
     token = payload.get("token")
     if token != settings.SLACK_VERIFICATION_TOKEN:
@@ -166,11 +169,29 @@ async def slack_interactions(
                 print("State values:", json.dumps(state_values, indent=2))
 
                 # Extracting and converting the start_time and end_time
-                state_values = payload.get("view", {}).get("state", {}).get("values", {})
-                start_date = state_values.get("start_time", {}).get("start_date_action", {}).get("selected_date")
-                start_time = state_values.get("start_time_picker", {}).get("start_time_picker_action", {}).get("selected_time")
-                end_date = state_values.get("end_time", {}).get("end_date_action", {}).get("selected_date")
-                end_time = state_values.get("end_time_picker", {}).get("end_time_picker_action", {}).get("selected_time")
+                state_values = (
+                    payload.get("view", {}).get("state", {}).get("values", {})
+                )
+                start_date = (
+                    state_values.get("start_time", {})
+                    .get("start_date_action", {})
+                    .get("selected_date")
+                )
+                start_time = (
+                    state_values.get("start_time_picker", {})
+                    .get("start_time_picker_action", {})
+                    .get("selected_time")
+                )
+                end_date = (
+                    state_values.get("end_time", {})
+                    .get("end_date_action", {})
+                    .get("selected_date")
+                )
+                end_time = (
+                    state_values.get("end_time_picker", {})
+                    .get("end_time_picker_action", {})
+                    .get("selected_time")
+                )
 
                 if not start_date or not start_time:
                     raise HTTPException(
@@ -185,30 +206,55 @@ async def slack_interactions(
 
                 # Exception handling
                 try:
-                    start_time_obj = datetime.strptime(start_datetime_str, "%Y-%m-%dT%H:%M:%S")
-                    end_time_obj = datetime.strptime(end_datetime_str, "%Y-%m-%dT%H:%M:%S")
+                    start_time_obj = datetime.strptime(
+                        start_datetime_str, "%Y-%m-%dT%H:%M:%S"
+                    )
+                    end_time_obj = datetime.strptime(
+                        end_datetime_str, "%Y-%m-%dT%H:%M:%S"
+                    )
                 except ValueError:
                     raise HTTPException(
                         status_code=400, detail="Invalid datetime format"
                     ) from e
 
                 # Extracting values from the Slack payload
-                affected_products_options = state_values.get("affected_products", {}).get("affected_products_action", {}).get("selected_options", [])
-                affected_products = [option["value"] for option in affected_products_options]
+                affected_products_options = (
+                    state_values.get("affected_products", {})
+                    .get("affected_products_action", {})
+                    .get("selected_options", [])
+                )
+                affected_products = [
+                    option["value"] for option in affected_products_options
+                ]
 
-                suspected_owning_team_options = state_values.get("suspected_owning_team", {}).get("suspected_owning_team_action", {}).get("selected_options", [])
-                suspected_owning_team = [option["value"] for option in suspected_owning_team_options]
+                suspected_owning_team_options = (
+                    state_values.get("suspected_owning_team", {})
+                    .get("suspected_owning_team_action", {})
+                    .get("selected_options", [])
+                )
+                suspected_owning_team = [
+                    option["value"] for option in suspected_owning_team_options
+                ]
 
-                suspected_affected_components_options = state_values.get("suspected_affected_components", {}).get("suspected_affected_components_action", {}).get("selected_options", [])
-                suspected_affected_components = [option["value"] for option in suspected_affected_components_options]
-                
-                severity_option = state_values.get("severity", {}).get("severity_action", {}).get("selected_option", {})
+                suspected_affected_components_options = (
+                    state_values.get("suspected_affected_components", {})
+                    .get("suspected_affected_components_action", {})
+                    .get("selected_options", [])
+                )
+                suspected_affected_components = [
+                    option["value"] for option in suspected_affected_components_options
+                ]
+
+                severity_option = (
+                    state_values.get("severity", {})
+                    .get("severity_action", {})
+                    .get("selected_option", {})
+                )
                 severity = [severity_option.get("value")] if severity_option else []
 
                 print(
                     f"Extracted values: {affected_products} {suspected_owning_team} {suspected_affected_components}"
                 )
-
 
                 incident_data = {
                     "affected_products": affected_products,
@@ -254,7 +300,7 @@ async def slack_interactions(
                         status_code=400,
                         detail=f"Failed to parse request body: {str(e)}",
                     ) from e
-              
+
             except ValidationError as e:
                 raise HTTPException(
                     status_code=400, detail=f"Failed to parse request body: {str(e)}"
@@ -265,7 +311,7 @@ async def slack_interactions(
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)
-            
+
             # Alert integration with Opsgenie
             try:
                 await create_alert(db_incident)
@@ -281,47 +327,51 @@ async def slack_interactions(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 ) from e
-    
+
             # Slack channel creation integration here
             try:
                 start_api_calls_time = time.time()
+
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
                 print(f"New Slack channel created with ID: {channel_id}")
 
                 # Posting a message to the created channel
                 incident_message = f"New Incident Created:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
+                
                 await post_message_to_slack(channel_id, incident_message)
 
                 # Posting message to general channel
                 general_outages_message = f"New Incident Created in #{channel_name}:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}"
+                
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
+
                 end_api_calls_time = time.time()
-                
-                print(f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds")
+
+                print(
+                    f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds"
+                )
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 ) from e
 
-
             if db_incident.end_time is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="End time not found"
                 )
-                
-            db_time = time.time()
-            print(f"Time to save incident to database: {db_time - start_api_calls_time} seconds")
 
-            
-                
+            db_time = time.time()
+            print(
+                f"Time to save incident to database: {db_time - start_api_calls_time} seconds"
+            )
+
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
-        
+
         return JSONResponse(
             status_code=404, content={"detail": "Command or callback ID not found"}
         )
 
     return JSONResponse(content={"response_action": "clear"})
-

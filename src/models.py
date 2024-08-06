@@ -31,7 +31,7 @@ class Incident(Base):
     __tablename__ = "service_incidents"
     id = Column(Integer, primary_key=True, index=True)
     affected_products = Column(ARRAY(String), nullable=False)
-    severity = Column(String(50),nullable=False)
+    severity =Column(ARRAY(String), nullable=False)
     suspected_owning_team = Column(ARRAY(String), nullable=False)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)

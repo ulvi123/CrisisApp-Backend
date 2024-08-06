@@ -129,7 +129,7 @@ async def create_modal_view(callback_id: str) -> dict:
                 "block_id": "severity",
                 "label": {"type": "plain_text", "text": "Severity"},
                 "element": {
-                    "type": "multi_static_select",
+                    "type": "static_select",
                     "placeholder": {"type": "plain_text", "text": "Select severity"},
                     "options": [
                         # {

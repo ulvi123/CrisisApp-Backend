@@ -28,12 +28,12 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
     suspected_owning_team = [team for team in incident.suspected_owning_team]
     affected_products = [product for product in incident.affected_products]
     # suspected_affected_components = [component for component in incident.suspected_affected_components]
-    severity = [severity for severity in incident.severity]
+    # severity = [severity for severity in incident.severity]
 
     issue_dict = {
         'fields': {
             'project': {'key': 'SO'},  # Ensure this is the correct project key
-            'summary': f"Incident: {incident.affected_products} - {incident.severity}",
+            'summary': f"Incident: {incident.affected_products}",
             'description': (
                 f"Description: {incident.description}\n"
                 f"Severity: {', '.join(incident.severity)}\n"
@@ -54,7 +54,9 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
             'customfield_12607': end_time_iso,
             'customfield_17273': [{'value': team} for team in suspected_owning_team],
             'customfield_17272': [{'value': product} for product in affected_products],
-            # 'customfield_11201': [{'value':severity} for severity in severity]
+            # 'customfield_11201': [{'value': severity} for severity in severity],
+            # 'customfield_16998': [{'value': component} for component in suspected_affected_components]-nuke it
+            #ASK Yordan what are the exact field IDs or names for these input fields in Jira!
         }
     }
     print("Sending request to Jira API")
@@ -63,7 +65,7 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
     print(f"Payload: {json.dumps(issue_dict, indent=2)}")
     
     try:
-        response =requests.post(jira_url, headers=headers, json=issue_dict,timeout=5)
+        response = requests.post(jira_url, headers=headers, json=issue_dict,timeout=5)
         print(f"Response status code: {response.status_code}")
         print(f"Response content: {response.content.decode()}")
         response.raise_for_status()  # Raise an exception for HTTP errors
