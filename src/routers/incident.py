@@ -335,21 +335,16 @@ async def slack_interactions(
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
                 print(f"New Slack channel created with ID: {channel_id}")
-
                 # Posting a message to the created channel
                 incident_message = f"New Incident Created:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
-                
                 await post_message_to_slack(channel_id, incident_message)
 
                 # Posting message to general channel
                 general_outages_message = f"New Incident Created in #{channel_name}:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}"
-                
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
-
                 end_api_calls_time = time.time()
-
                 print(
                     f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds"
                 )
@@ -357,6 +352,9 @@ async def slack_interactions(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 ) from e
+
+
+
 
             if db_incident.end_time is None:
                 raise HTTPException(
