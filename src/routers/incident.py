@@ -250,7 +250,8 @@ async def slack_interactions(
                     .get("severity_action", {})
                     .get("selected_option", {})
                 )
-                severity = [severity_option.get("value")] if severity_option else []
+                severity = severity_option.get("value") if severity_option else None
+                severity = [severity] if severity else []
 
                 print(
                     f"Extracted values: {affected_products} {suspected_owning_team} {suspected_affected_components}"
@@ -352,9 +353,6 @@ async def slack_interactions(
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 ) from e
-
-
-
 
             if db_incident.end_time is None:
                 raise HTTPException(

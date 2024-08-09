@@ -46,6 +46,7 @@ async def get_channel_id(channel_name: str) -> str:
             detail=f"Slack API error: {e.response['error']}",
         ) from e
 
+#check the channel not found bug- the root cause of it
 async def post_message_to_slack(channel_id: str, message: str):
     try:
         response = await run_in_executor(

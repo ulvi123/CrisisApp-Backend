@@ -27,8 +27,7 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
     end_time_iso = incident.end_time.isoformat() if incident.end_time else None
     suspected_owning_team = [team for team in incident.suspected_owning_team]
     affected_products = [product for product in incident.affected_products]
-    # suspected_affected_components = [component for component in incident.suspected_affected_components]
-    # severity = [severity for severity in incident.severity]
+    severity = [severity for severity in incident.severity]
 
     issue_dict = {
         'fields': {
@@ -54,6 +53,7 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
             'customfield_12607': end_time_iso,
             'customfield_17273': [{'value': team} for team in suspected_owning_team],
             'customfield_17272': [{'value': product} for product in affected_products],
+            'customfield_11201': {'value': severity[0]} if severity else None,
             # 'customfield_11201': [{'value': severity} for severity in severity],
             # 'customfield_16998': [{'value': component} for component in suspected_affected_components]-nuke it
             #ASK Yordan what are the exact field IDs or names for these input fields in Jira!
