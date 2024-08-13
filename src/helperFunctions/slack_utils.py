@@ -3,7 +3,7 @@ import time
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
-from fastapi import HTTPException, status,Depends
+from fastapi import HTTPException, status, Depends
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from config import get_settings, Settings
@@ -16,9 +16,11 @@ slack_client = WebClient(token=settings.SLACK_BOT_TOKEN)
 
 executor = ThreadPoolExecutor(max_workers=10)
 
-async def run_in_executor(func, *args,**kwargs):
+
+async def run_in_executor(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(executor, lambda:(func(*args,**kwargs)))
+    return await loop.run_in_executor(executor, lambda: (func(*args, **kwargs)))
+
 
 async def test_slack_integration(slack_settings: Settings = Depends(get_settings)):
     try:
@@ -29,6 +31,7 @@ async def test_slack_integration(slack_settings: Settings = Depends(get_settings
     except SlackApiError as e:
         logger.error(f"Test Slack Integration Error: {str(e)}")
 
+
 async def get_channel_id(channel_name: str) -> str:
     try:
         response = await run_in_executor(slack_client.conversations_list)
@@ -37,7 +40,7 @@ async def get_channel_id(channel_name: str) -> str:
                 if channel["name"] == channel_name:
                     logger.info(f"Channel already exists. Channel ID: {channel['id']}")
                     return channel["id"]
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
         return None
     except SlackApiError as e:
         logger.error(f"Slack API error in get_channel_id: {e.response['error']}")
@@ -46,29 +49,31 @@ async def get_channel_id(channel_name: str) -> str:
             detail=f"Slack API error: {e.response['error']}",
         ) from e
 
-#check the channel not found bug- the root cause of it
+
+# check the channel not found bug- the root cause of it
 async def post_message_to_slack(channel_id: str, message: str):
     try:
         response = await run_in_executor(
             slack_client.chat_postMessage, channel=channel_id, text=message
         )
-        logger.info(f"Message posted to Slack channel ID {channel_id}")
-        
+
         if response["ok"]:
             logger.info(f"Message posted to Slack channel ID {channel_id}")
             return response
-        else:
-            logger.error(f"Slack API error in post_message_to_slack: {response['error']}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Slack API error: {response['error']}",
-            )
+        logger.error(
+            f"Slack API error in post_message_to_slack: {response['error']}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Slack API error: {response['error']}",
+        )
     except SlackApiError as e:
         logger.error(f"Slack API error in post_message_to_slack: {e.response['error']}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Slack API error: {e.response['error']}",
-        ) from e 
+        ) from e
+
 
 async def create_slack_channel(channel_name: str) -> str:
     try:
@@ -81,7 +86,9 @@ async def create_slack_channel(channel_name: str) -> str:
         # If the channel does not exist, create a new one
         unique_channel_name = f"{channel_name}-{int(time.time())}"
         response = await run_in_executor(
-            slack_client.conversations_create, name=unique_channel_name,is_private = False
+            slack_client.conversations_create,
+            name=unique_channel_name,
+            is_private=False,
         )
 
         logger.info(f"Slack API response in create_slack_channel: {response}")
@@ -91,7 +98,9 @@ async def create_slack_channel(channel_name: str) -> str:
             logger.info(f"Channel created successfully. Channel ID: {channel_id}")
             return channel_id
 
-        logger.error(f"Failed to create channel. Error: {response.get('error', 'Unknown error')}")
+        logger.error(
+            f"Failed to create channel. Error: {response.get('error', 'Unknown error')}"
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create Slack channel: {response.get('error', 'Unknown error')}",
@@ -117,6 +126,3 @@ async def create_slack_channel(channel_name: str) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
         ) from e
-
-
-

@@ -29,36 +29,70 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
     affected_products = [product for product in incident.affected_products]
     severity = [severity for severity in incident.severity]
 
-    issue_dict = {
-        'fields': {
-            'project': {'key': 'SO'},  # Ensure this is the correct project key
-            'summary': f"Incident: {incident.affected_products}",
-            'description': (
-                f"Description: {incident.description}\n"
-                f"Severity: {', '.join(incident.severity)}\n"
-                f"Affected Products: {', '.join(incident.affected_products)}\n"
-                f"Suspected Owning Team: {', '.join(incident.suspected_owning_team)}\n"
-                f"Start Time: {incident.start_time}\n"
-                f"Customer Affected: {'Yes' if incident.p1_customer_affected else 'No'}\n"
-                f"Suspected Affected Components: {', '.join(incident.suspected_affected_components)}\n"
-                f"Message for SP: {incident.message_for_sp}\n"
-                f"Status Page Notification: {'Yes' if incident.statuspage_notification else 'No'}\n"
-                f"Separate Channel Creation: {'Yes' if incident.separate_channel_creation else 'No'}"
-            ),
-            'issuetype': {'name': 'Service Outage'},  # Adjust issuetype as necessary
-            'reporter': {'name': settings.jira_email},  # Use the email as the reporter
+    # issue_dict = {
+    #     'fields': {
+    #         'project': {'key': 'SO'},  # Ensure this is the correct project key
+    #         'summary': f"Incident: {incident.affected_products}",
+    #         'description': (
+    #             f"Description: {incident.description}\n"
+    #             f"Severity: {', '.join(incident.severity)}\n"
+    #             f"Affected Products: {', '.join(incident.affected_products)}\n"
+    #             f"Suspected Owning Team: {', '.join(incident.suspected_owning_team)}\n"
+    #             f"Start Time: {incident.start_time}\n",
+    #             f"End Time: {incident.end_time}\n",
+    #             f"Customer Affected: {'Yes' if incident.p1_customer_affected else 'No'}\n"
+    #             f"Suspected Affected Components: {', '.join(incident.suspected_affected_components)}\n"
+    #             f"Message for SP: {incident.message_for_sp}\n"
+    #             f"Status Page Notification: {'Yes' if incident.statuspage_notification else 'No'}\n"
+    #             f"Separate Channel Creation: {'Yes' if incident.separate_channel_creation else 'No'}"
+    #         ),
+    #         'issuetype': {'name': 'Service Outage'},  # Adjust issuetype as necessary
+    #         'reporter': {'name': settings.jira_email},  # Use the email as the reporter
             
-            # Custom fields
-            'customfield_12608': start_time_iso,
-            'customfield_12607': end_time_iso,
-            'customfield_17273': [{'value': team} for team in suspected_owning_team],
-            'customfield_17272': [{'value': product} for product in affected_products],
-            'customfield_11201': {'value': severity[0]} if severity else None,
-            # 'customfield_11201': [{'value': severity} for severity in severity],
-            # 'customfield_16998': [{'value': component} for component in suspected_affected_components]-nuke it
-            #ASK Yordan what are the exact field IDs or names for these input fields in Jira!
-        }
+    #         # Custom fields
+    #         'customfield_12608': start_time_iso,
+    #         'customfield_12607': end_time_iso,
+    #         'customfield_17273': [{'value': team} for team in suspected_owning_team],
+    #         'customfield_17272': [{'value': product} for product in affected_products],
+    #         'customfield_11201': {'value': severity[0]} if severity else None,
+    #         # 'customfield_11201': [{'value': severity} for severity in severity],
+    #         # 'customfield_16998': [{'value': component} for component in suspected_affected_components]-nuke it
+    #         #ASK Yordan what are the exact field IDs or names for these input fields in Jira!
+    #     }
+    # }
+    
+    
+    issue_dict = {
+    'fields': {
+        'project': {'key': 'SO'},  # Ensure this is the correct project key
+        'summary': f"Incident: {', '.join(incident.affected_products)}",
+        'description': (
+            f"Description: {incident.description}\n"
+            f"Severity: {', '.join(incident.severity)}\n"
+            f"Affected Products: {', '.join(incident.affected_products)}\n"
+            f"Suspected Owning Team: {', '.join(incident.suspected_owning_team)}\n"
+            f"Start Time: {incident.start_time}\n"
+            f"End Time: {incident.end_time}\n"
+            f"Customer Affected: {'Yes' if incident.p1_customer_affected else 'No'}\n"
+            f"Suspected Affected Components: {', '.join(incident.suspected_affected_components)}\n"
+            f"Message for SP: {incident.message_for_sp}\n"
+            f"Status Page Notification: {'Yes' if incident.statuspage_notification else 'No'}\n"
+            f"Separate Channel Creation: {'Yes' if incident.separate_channel_creation else 'No'}"
+        ),
+        'issuetype': {'name': 'Service Outage'},  # Adjust issuetype as necessary
+        'reporter': {'name': settings.jira_email},  # Use the email as the reporter
+
+        # Custom fields
+        'customfield_12608': start_time_iso,
+        'customfield_12607': end_time_iso,
+        'customfield_17273': [{'value': team} for team in suspected_owning_team],
+        'customfield_17272': [{'value': product} for product in affected_products],
+        'customfield_11201': {'value': severity[0]} if severity else None,
     }
+}
+
+    print("Jira Issue Payload:", json.dumps(issue_dict, indent=2))
+
     print("Sending request to Jira API")
     print(f"URL: {jira_url}")
     print(f"Headers: {headers}")
