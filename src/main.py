@@ -32,7 +32,6 @@ if __name__ == "__main__":
 
 """
 Below Code was used for testing purposes but still is kept for future debugging purposes
-    
 """
 
 @app.exception_handler(Exception)

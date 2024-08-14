@@ -1,3 +1,4 @@
+import re
 from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
 from sqlalchemy.orm import Session
 from src import models
@@ -333,6 +334,12 @@ async def slack_interactions(
             # Slack channel creation integration here
             try:
                 start_api_calls_time = time.time()
+                
+                #More simplified channel naming
+                # current_time = datetime.now().strftime("%Y%m%d-%H%M")
+                # team_name = db_incident.suspected_owning_team[0].lower()
+                # team_name = re.sub(r'[^a-zA-Z0-9]+', '-', team_name)
+                # channel_name = f"incident - {current_time}- {team_name}"
 
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
@@ -341,12 +348,13 @@ async def slack_interactions(
 
 
                 # Posting a message to the created channel
-                incident_message = f"New Incident Created:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
+                incident_message = f"🚨 *New Incident Created* 🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} > {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
                 await post_message_to_slack(channel_id, incident_message)
                 logger.info(f"Message posted to new channel {channel_id}")
                 
                 # Posting message to general channel
-                general_outages_message = f"New Incident Created in #{channel_name}:\n\n*Description:* {db_incident.description}\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}"
+                general_outages_message = f"🚨New Incident Created in #{channel_name}🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} > {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {db_incident.suspected_owning_team}"
+                
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )

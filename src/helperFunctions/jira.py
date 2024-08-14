@@ -65,7 +65,7 @@ async def create_jira_ticket(incident:schemas.IncidentCreate):
     issue_dict = {
     'fields': {
         'project': {'key': 'SO'},  # Ensure this is the correct project key
-        'summary': f"Incident: {', '.join(incident.affected_products)}",
+        'summary': f"{incident.start_time} > {incident.severity}> {', '.join(incident.affected_products)} > Outage ",
         'description': (
             f"Description: {incident.description}\n"
             f"Severity: {', '.join(incident.severity)}\n"
