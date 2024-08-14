@@ -9,7 +9,7 @@ async def create_alert(incident):
     }
     
     payload = {
-        "message": "Incident Alert",
+        "message": "Service Outage Alert",
         "description": f"An incident has been created with the following details: \n{incident}",
         "priority": "P1",
     }

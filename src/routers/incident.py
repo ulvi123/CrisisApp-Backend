@@ -334,13 +334,6 @@ async def slack_interactions(
             # Slack channel creation integration here
             try:
                 start_api_calls_time = time.time()
-                
-                #More simplified channel naming
-                # current_time = datetime.now().strftime("%Y%m%d-%H%M")
-                # team_name = db_incident.suspected_owning_team[0].lower()
-                # team_name = re.sub(r'[^a-zA-Z0-9]+', '-', team_name)
-                # channel_name = f"incident - {current_time}- {team_name}"
-
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
                 logger.info(f"New Slack channel created with ID: {channel_id}")
