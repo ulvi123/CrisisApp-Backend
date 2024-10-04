@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     SLACK_VERIFICATION_TOKEN: str
     SLACK_BOT_TOKEN: str
     SLACK_GENERAL_OUTAGES_CHANNEL: str
+    SLACK_CLIENT_ID: str
+    SLACK_TOKEN_URL: str
+    SLACK_CLIENT_SECRET: str
+    SLACK_REDIRECT_URI: str
     database_hostname: str
     database_port: str
     database_password: str

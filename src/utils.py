@@ -7,6 +7,8 @@ import hashlib
 import json
 import os
 import time
+import cryptography
+from cryptography.fernet import Fernet
 
 
 settings = get_settings()
@@ -318,3 +320,18 @@ async def create_modal_view(callback_id: str) -> dict:
             },
         ],
     }
+
+
+#generating the key now once and storing it securely in AWS secrets manager later on
+def generate_key():
+    return Fernet.generate_key().decode("utf-8")
+
+#encrypting the token for the db
+def encrypt_token(token:str,key:str) ->str:
+    fernet = Fernet(key.encode("utf-8"))
+    return fernet.encrypt(token.encode("utf-8")).decode("utf-8")
+
+#decrypting the token
+def decrypt_token(encrypted_token:str,key:str) ->str:
+    fernet = Fernet(key.encode("utf-8"))
+    return fernet.decrypt(encrypted_token.encode()).decode()

@@ -46,3 +46,11 @@ class Incident(Base):
 
     def __repr__(self):
         return f"<Incident(id={self.id}, affected_products={self.affected_products}, severity={self.severity}, start_time={self.start_time}, end_time={self.end_time}, status={self.status})>"
+    
+    
+    class UserToken(Base):
+        __tablename__ = "user_tokens"
+        id = Column(Integer, primary_key=True, index=True)
+        user_id = Column(String(250), index=True, nullable=False)
+        encrypted_token = Column(String(250), index=True, nullable=False)
+        created_at = Column(DateTime, nullable=True, default=datetime.now())

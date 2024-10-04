@@ -1,17 +1,21 @@
 import os
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from src.routers import incident  # type: ignore
 from src.utils import initialize_options
 from src.helperFunctions.slack_utils import test_slack_integration
+from config import get_settings, Settings
 import os
 import logging
 from fastapi.logger import logger as fastapi_logger
+import httpx
+from src.models import UserToken
+from src.database import get_db
+from src.utils import encrypt_token
 
 app = FastAPI()
-
-
 app.include_router(incident.router)
+settings = get_settings()
 
 
 @app.on_event("startup")
@@ -43,8 +47,36 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# options = load_options_from_file(os.path.join(os.path.dirname(__file__), "options.json"))
+#Slack authorization verification logic
 
-# Configure logging
-# logging.basicConfig(level=logging.DEBUG)
-# fastapi_logger.setLevel(logging.DEBUG)
+@app.get("/slack/login")
+async def slack_login():
+    slack_auth_url = (
+        f"https://slack.com/oauth/v2/authorize?client_id={settings.SLACK_CLIENT_ID}"
+        f"&scope=users:read&redirect_uri={settings.SLACK_REDIRECT_URI}"
+    )
+    
+    return RedirectResponse(slack_auth_url)
+
+@app.get("/slack/oauth/callback")
+async def slack_oauth_callback(request:Request):
+    code = request.query_params.get("code")
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            settings.SLACK_TOKEN_URL,
+            data = {
+                "client_id": settings.SLACK_CLIENT_ID,
+                "client_secret": settings.SLACK_CLIENT_SECRET,
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": settings.SLACK_REDIRECT_URI
+            }
+        )
+        
+        token_data = response.json()
+        access_token = token_data.get("access_token")
+        if access_token:
+            #Storing the token securely in the database-add logic
+            #next step is to do this
+            return {"message": "Authentication successful",access_token:access_token}
+        return access_token
