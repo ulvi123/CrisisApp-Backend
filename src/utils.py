@@ -322,9 +322,6 @@ async def create_modal_view(callback_id: str) -> dict:
     }
 
 
-#generating the key now once and storing it securely in AWS secrets manager later on
-def generate_key():
-    return Fernet.generate_key().decode("utf-8")
 
 #encrypting the token for the db
 def encrypt_token(token:str,key:str) ->str:

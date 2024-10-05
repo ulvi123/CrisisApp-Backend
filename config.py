@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     SLACK_TOKEN_URL: str
     SLACK_CLIENT_SECRET: str
     SLACK_REDIRECT_URI: str
+    ENCRYPTION_KEY: str
     database_hostname: str
     database_port: str
     database_password: str

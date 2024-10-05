@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request,Depends
+from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse, RedirectResponse
 from src.routers import incident  # type: ignore
 from src.utils import initialize_options
@@ -12,10 +13,17 @@ import httpx
 from src.models import UserToken
 from src.database import get_db
 from src.utils import encrypt_token
+from .database import get_db,SessionLocal
+from cryptography.fernet import Fernet
+
 
 app = FastAPI()
 app.include_router(incident.router)
+
 settings = get_settings()
+encryption_key= settings.ENCRYPTION_KEY
+cipher = Fernet(encryption_key.encode())
+
 
 
 @app.on_event("startup")
@@ -23,9 +31,9 @@ async def startup_event():
     await initialize_options()
 
 
-@app.get("/")
-def root():
-    return {"message": "Hello World"}
+# @app.get("/")
+# def root():
+#     return {"message": "Hello World"}
 
 
 if __name__ == "__main__":
@@ -59,15 +67,19 @@ async def slack_login():
     return RedirectResponse(slack_auth_url)
 
 @app.get("/slack/oauth/callback")
-async def slack_oauth_callback(request:Request):
+async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
     code = request.query_params.get("code")
+    logging.info(f"Authorization code received: {code}")
+    
+    if not code:
+        return {"error": "No authorization code received"}
+    
     async with httpx.AsyncClient() as client:
         response = await client.post(
             settings.SLACK_TOKEN_URL,
             data = {
                 "client_id": settings.SLACK_CLIENT_ID,
                 "client_secret": settings.SLACK_CLIENT_SECRET,
-                "grant_type": "authorization_code",
                 "code": code,
                 "redirect_uri": settings.SLACK_REDIRECT_URI
             }
@@ -75,8 +87,14 @@ async def slack_oauth_callback(request:Request):
         
         token_data = response.json()
         access_token = token_data.get("access_token")
+        
         if access_token:
-            #Storing the token securely in the database-add logic
-            #next step is to do this
+            encrypted_token = cipher.encrypt(access_token.encode()).decode()
+            
+            #save to db
+            db_token = UserToken(user_id="U123",encrypted_token=encrypted_token)
+            db.add(db_token)
+            db.commit()
             return {"message": "Authentication successful",access_token:access_token}
-        return access_token
+        
+        return {"error": "Failed to retrieve access token"}
