@@ -69,11 +69,11 @@ async def slack_login():
 @app.get("/slack/oauth/callback")
 async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
     code = request.query_params.get("code")
+    
     logging.info(f"Authorization code received: {code}")
     
     if not code:
         return {"error": "No authorization code received"}
-    
     async with httpx.AsyncClient() as client:
         response = await client.post(
             settings.SLACK_TOKEN_URL,
@@ -86,15 +86,46 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
         )
         
         token_data = response.json()
-        access_token = token_data.get("access_token")
         
-        if access_token:
-            encrypted_token = cipher.encrypt(access_token.encode()).decode()
-            
-            #save to db
-            db_token = UserToken(user_id="U123",encrypted_token=encrypted_token)
+        logging.info(f"Slack response Data: {token_data}")
+        if "error" in token_data:
+            logging.error(f"Slack API returned an error:{token_data["error"]}")
+            return {"error":token_data['error']}
+        
+        access_token = token_data.get("access_token")
+        authed_user = token_data.get("authed_user")
+        if authed_user:
+            user_id = authed_user.get("id")
+        else:
+            user_id=None
+        
+        #Checking exceptions
+        if not user_id or not access_token:
+            logging.error("Failed to retrieve access_token or user_dataaaa")
+            return {"error": "Failed to retrieve access token or user dataaaaa"}
+        
+        
+        #Writing the access token to db
+        encrypted_token = cipher.encrypt(access_token.encode()).decode()
+        
+        #checking if the token already is in the database
+        is_token_exist = db.query(UserToken).filter(UserToken.user_id == user_id).first()
+        
+        if is_token_exist:
+            is_token_exist.encrypted_token = encrypted_token
+            db.commit()
+            logging.info(f"Updated token for user_id :{user_id}")
+        else:
+            #add new token to the database
+            db_token = UserToken(user_id = user_id,encrypted_token=encrypted_token)
             db.add(db_token)
             db.commit()
-            return {"message": "Authentication successful",access_token:access_token}
+            logging.info(f"The new token for user_id :{user_id}")
+            
+        return {"message":"Authentication successfull"}
+        # return RedirectResponse(url="https://f72c-82-131-117-168.ngrok-free.app/home")
         
-        return {"error": "Failed to retrieve access token"}
+        
+          
+        
+    return {"error": "Failed to retrieve access token"}
