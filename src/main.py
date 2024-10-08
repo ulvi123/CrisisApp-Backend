@@ -99,7 +99,7 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
         else:
             user_id=None
         
-        #Checking exceptions
+        #Checking exceptions for the user
         if not user_id or not access_token:
             logging.error("Failed to retrieve access_token or user_dataaaa")
             return {"error": "Failed to retrieve access token or user dataaaaa"}
@@ -121,9 +121,23 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
             db.add(db_token)
             db.commit()
             logging.info(f"The new token for user_id :{user_id}")
+    
+     
+        #Now sending the message to the user in slack
+        send_message_url = "https://slack.com/api/chat.postMessage"
+        headers = {"Authorization":f"Bearer {access_token}"}
+        data = {
+            "channel":user_id,
+            "text":"You’ve successfully authenticated! You can now use CRISIS app to create incidents."
+        }
+        
+        #Additional step : sending the messagr to the user itself
+        message_response = await client.post(send_message_url,headers=headers,json = data)
+        if message_response.status_code != 200 or not message_response.json().get('ok'):
+            raise HTTPException(status_code=500,detail="Failed to send slack message")
             
-        return {"message":"Authentication successfull"}
-        # return RedirectResponse(url="https://f72c-82-131-117-168.ngrok-free.app/home")
+        return {"message":"Authentication successful"}
+
         
         
           
