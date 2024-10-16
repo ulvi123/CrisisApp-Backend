@@ -15,6 +15,9 @@ from src.database import get_db
 from src.utils import encrypt_token
 from .database import get_db,SessionLocal
 from cryptography.fernet import Fernet
+import asyncio
+
+
 
 
 app = FastAPI()
@@ -30,17 +33,9 @@ cipher = Fernet(encryption_key.encode())
 async def startup_event():
     await initialize_options()
 
-
-# @app.get("/")
-# def root():
-#     return {"message": "Hello World"}
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(startup_event())
-    asyncio.run(test_slack_integration())
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
 
 """
 Below Code was used for testing purposes but still is kept for future debugging purposes
@@ -56,14 +51,12 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 #Slack authorization verification logic
-
 @app.get("/slack/login")
 async def slack_login():
     slack_auth_url = (
         f"https://slack.com/oauth/v2/authorize?client_id={settings.SLACK_CLIENT_ID}"
         f"&scope=users:read&redirect_uri={settings.SLACK_REDIRECT_URI}"
     )
-    
     return RedirectResponse(slack_auth_url)
 
 @app.get("/slack/oauth/callback")
@@ -96,6 +89,7 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
         authed_user = token_data.get("authed_user")
         if authed_user:
             user_id = authed_user.get("id")
+            
         else:
             user_id=None
         
@@ -117,10 +111,14 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
             logging.info(f"Updated token for user_id :{user_id}")
         else:
             #add new token to the database
-            db_token = UserToken(user_id = user_id,encrypted_token=encrypted_token)
+            admin_exists = db.query(UserToken).filter(UserToken.role == "admin").first()
+            role = "user" if admin_exists else "admin"
+            db_token = UserToken(user_id = user_id,encrypted_token=encrypted_token,role=role)
             db.add(db_token)
             db.commit()
-            logging.info(f"The new token for user_id :{user_id}")
+            logging.info(f"The new token for user_id :{user_id} and {role}")
+            
+       
     
      
         #Now sending the message to the user in slack
@@ -128,7 +126,8 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
         headers = {"Authorization":f"Bearer {access_token}"}
         data = {
             "channel":user_id,
-            "text":"You’ve successfully authenticated! You can now use CRISIS app to create incidents."
+            "text":"You’ve successfully authenticated! You can now use CRISIS app to create incidents.You can now create and view incidents in the #gs-service-outages channel.Good luck!",
+            "as_user":True
         }
         
         #Additional step : sending the messagr to the user itself
@@ -143,3 +142,23 @@ async def slack_oauth_callback(request:Request, db:Session=Depends(get_db)):
           
         
     return {"error": "Failed to retrieve access token"}
+
+
+@app.get("/slack/user/{user_id}")
+async def get_user_token(user_id: str, db: Session = Depends(get_db)):
+    token_entry = db.query(UserToken).filter(UserToken.user_id == user_id).first()
+    
+    if token_entry:
+        decrypted_token = cipher.decrypt(token_entry.encrypted_token.encode()).decode()
+        
+        return {"user_id":user_id,"token":decrypted_token}
+    return {"user_id":user_id,"token":"Token was not found"}
+
+
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(startup_event())
+    asyncio.run(test_slack_integration())

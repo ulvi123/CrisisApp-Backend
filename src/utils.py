@@ -96,27 +96,22 @@ async def create_modal_view(callback_id: str) -> dict:
             },
             {
                 "type": "input",
+                "block_id": "so_number",
+                "label": {"type": "plain_text", "text": "SO Number"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "so_number_action",
+                    "placeholder": {"type": "plain_text", "text": "Enter the SO Number (e.g., SO-1245)"},
+                },
+            },
+            {
+                "type": "input",
                 "block_id": "affected_products",
                 "label": {"type": "plain_text", "text": "Affected Products"},
                 "element": {
                     "type": "multi_static_select",
                     "placeholder": {"type": "plain_text", "text": "Select products"},
                     "options": [
-                        # Old hardcoded code-keeping it for future,just in case something breaks
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "BetBuilder"
-                        #     },
-                        #     "value": "BetBuilder"
-                        # },
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "BetVision"
-                        #     },
-                        #     "value": "BetVision"
-                        # }
                         {
                             "text": {"type": "plain_text", "text": item["text"]},
                             "value": item["value"],
@@ -134,41 +129,6 @@ async def create_modal_view(callback_id: str) -> dict:
                     "type": "static_select",
                     "placeholder": {"type": "plain_text", "text": "Select severity"},
                     "options": [
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "Major"
-                        #     },
-                        #     "value": "Major"
-                        # },
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "Minor"
-                        #     },
-                        #     "value": "Minor"
-                        # },
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "Moderate"
-                        #     },
-                        #     "value": "Moderate"
-                        # },
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "No issue"
-                        #     },
-                        #     "value": "No issue"
-                        # },
-                        # {
-                        #     "text": {
-                        #         "type": "plain_text",
-                        #         "text": "None"
-                        #     },
-                        #     "value": "None"
-                        # }
                         {
                             "text": {"type": "plain_text", "text": item["text"]},
                             "value": item["value"],
@@ -321,7 +281,36 @@ async def create_modal_view(callback_id: str) -> dict:
         ],
     }
 
-
+async def get_modal_view(callback_id: str) -> dict:
+    return{
+        "type": "modal",
+        "callback_id": "so_lookup_form",
+        "title": {
+            "type": "plain_text",
+            "text": "SO Number Lookup"
+        },
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "so_number_block",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "so_number_action",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Enter the SO Number (e.g., SO-1245)"
+                    }
+                },
+                "label": {
+                    "type": "plain_text",
+                    "text": "SO Number"
+                 }
+            }
+        ], 
+        "private_metadata": json.dumps({"callback_id": callback_id}),
+        "submit": {"type": "plain_text", "text": "Submit"},
+        "close": {"type": "plain_text", "text": "Cancel"},
+    }
 
 #encrypting the token for the db
 def encrypt_token(token:str,key:str) ->str:

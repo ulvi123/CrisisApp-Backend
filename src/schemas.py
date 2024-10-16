@@ -8,6 +8,7 @@ class IncidentBase(BaseModel):
 
     affected_products: List[str]
     severity: List[str]
+    so_number:str
     suspected_owning_team: List[str]
     start_time: datetime
     end_time: datetime

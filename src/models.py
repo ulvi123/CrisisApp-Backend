@@ -30,6 +30,7 @@ class Incident(Base):
     """
     __tablename__ = "service_incidents"
     id = Column(Integer, primary_key=True, index=True)
+    so_number = Column(String(250), index=True, nullable=True,unique=True)
     affected_products = Column(ARRAY(String), nullable=False)
     severity = Column(ARRAY(String), nullable=False)
     suspected_owning_team = Column(ARRAY(String), nullable=False)
@@ -54,4 +55,5 @@ class UserToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(250),unique=True, index=True, nullable=False)
     encrypted_token = Column(String(250), index=True, nullable=False)
+    role = Column(String(250), index=True)
     created_at = Column(DateTime, nullable=True, default=datetime.now())
