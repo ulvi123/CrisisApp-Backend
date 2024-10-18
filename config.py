@@ -25,9 +25,14 @@ class Settings(BaseSettings):
     jira_api_key: str
     jira_email: str
     jira_server: str
+    statuspage_api_key: str
+    statuspage_page_id: str
+    statuspage_component_id: str
+    statuspage_url: str
 
     class Config:
         env_file = ".env"
+        # case_sensitive = True
         env_file_encoding = 'utf-8'
         
         

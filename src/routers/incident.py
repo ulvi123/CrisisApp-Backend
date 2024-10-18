@@ -12,6 +12,7 @@ from src.utils import (
     get_modal_view,
     get_incident_details_modal
 )
+from src.helperFunctions.status_page import create_statuspage_incident
 from starlette.responses import JSONResponse
 from config import get_settings, Settings
 import requests
@@ -420,6 +421,17 @@ async def slack_interactions(
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)
+            
+            
+            #Sending the incident to Statuspage
+            incident_data = db_incident.__dict__ if isinstance (db_incident,models.Incident) else db_incident
+            try:
+                await create_statuspage_incident(incident_data,settings)
+                logger.info(f"Statuspage incident created with ID: {db_incident.id}")
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+                )
 
             # Alert integration with Opsgenie
             try:
