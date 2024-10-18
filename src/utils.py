@@ -292,7 +292,7 @@ async def get_modal_view(callback_id: str) -> dict:
         "blocks": [
             {
                 "type": "input",
-                "block_id": "so_number_block",
+                "block_id": "so_number",
                 "element": {
                     "type": "plain_text_input",
                     "action_id": "so_number_action",
@@ -310,6 +310,70 @@ async def get_modal_view(callback_id: str) -> dict:
         "private_metadata": json.dumps({"callback_id": callback_id}),
         "submit": {"type": "plain_text", "text": "Submit"},
         "close": {"type": "plain_text", "text": "Cancel"},
+    }
+
+
+# def get_incident_details_modal(db_incident):
+    return {
+        "type": "modal",
+        "callback_id": "incident_details_form",
+        "title": {
+            "type": "plain_text",
+            "text": "Incident Details"
+        },
+        "blocks": [
+            {
+                "type": "section",
+                "block_id": "incident_info_block",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*Incident ID:* {db_incident['id']}\n"
+                        f"*SO Number:* {db_incident['so_number']}\n"
+                        f"*Severity:* {db_incident['severity']}\n"
+                        f"*Affected Products:* {', '.join(db_incident['affected_products'])}\n"
+                        f"*Suspected Owning Team:* {', '.join(db_incident['suspected_owning_team'])}\n"
+                        f"*Start Time:* {db_incident['start_time']}\n"
+                        f"*End Time:* {db_incident['end_time']}\n"
+                        f"*Description:* {db_incident['description']}"
+                    )
+                }
+            },
+            {
+                "type": "actions",
+                "block_id": "incident_actions_block",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Update Incident"
+                        },
+                        "value": f"incident_update_{db_incident['id']}",
+                        "action_id": "update_incident_button"
+                    }
+                ]
+            }
+        ],
+        "close": {
+            "type": "plain_text",
+            "text": "Close"
+        }
+    }
+
+def get_incident_details_modal(db_incident):
+    return {
+        "type": "modal",
+        "title": {"type": "plain_text", "text": "Incident Details"},
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*SO Number:* {db_incident['so_number']}\n*Severity:* {db_incident['severity']}"
+                }
+            }
+        ]
     }
 
 #encrypting the token for the db

@@ -6,9 +6,10 @@ from typing import Optional,List
 class IncidentBase(BaseModel):
     """Base model for incident."""
 
+   
     affected_products: List[str]
+    so_number:str = Field(..., description="SO Number")
     severity: List[str]
-    so_number:str
     suspected_owning_team: List[str]
     start_time: datetime
     end_time: datetime
