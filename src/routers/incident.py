@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
 import httpx
@@ -205,35 +206,28 @@ async def slack_interactions(
         body, x_slack_signature, x_slack_request_timestamp, settings
     )
 
-    
-    logging.info("Processing Slack interactions...")
-
-    # Log headers to ensure they're received
-    logging.info(f"x_slack_signature: {x_slack_signature}")
-    logging.info(f"x_slack_request_timestamp: {x_slack_request_timestamp}")
     decoded_body = parse_qs(body.decode("utf-8"))
-    logging.info(f"Decoded body: {decoded_body}")
     payload_str = decoded_body.get("payload", [None])[0]
     if not payload_str:
         logging.error("Missing payload in the request")
         raise HTTPException(status_code=400, detail="Missing payload")
-
     # Parsing the payload here
     try:
         payload = json.loads(payload_str)
         print(f"Payload: {json.dumps(payload, indent=2)}")
-        logging.info(f"Parsed payload: {json.dumps(payload, indent=2)}")
     except json.JSONDecodeError as e:
-        logging.error(f"Failed to parse payload: {str(e)}")
         raise HTTPException(
             status_code=400, detail=f"Failed to parse request body: {str(e)}"
         ) from e
-
+        
+    
+    
     # Verifying the signature
     token = payload.get("token")
     if token != settings.SLACK_VERIFICATION_TOKEN:
         logging.error("Invalid Slack verification token")
         raise HTTPException(status_code=400, detail="Invalid token")
+        
     
     #Extracting user id for usage in sending slack messages
     user_id = payload.get("user",{}).get("id")
@@ -318,7 +312,6 @@ async def slack_interactions(
                     logger.error("Missing SO number")
                     print("Missing SO number")
                 else:
-                    logger.info(f"SO number: {so_number}")
                     print(f"SO number: {so_number}")
                 
                 affected_products_options = (
@@ -357,12 +350,7 @@ async def slack_interactions(
                 severity = [severity] if severity else []
                 
                 
-                
-
-                print(
-                    f"Extracted values: {affected_products} {suspected_owning_team} {suspected_affected_components}"
-                )
-
+            
                 # Creating the incident data
                 incident_data = {
                     "so_number": so_number,
@@ -403,64 +391,44 @@ async def slack_interactions(
                     
                 }
 
-                try:
-                    incident = schemas.IncidentCreate(**incident_data)
-                except ValidationError as e:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Failed to parse request body: {str(e)}",
-                    ) from e
-
             except ValidationError as e:
                 raise HTTPException(
                     status_code=400, detail=f"Failed to parse request body: {str(e)}"
                 ) from e
 
-            # Time to save the incident to our postgresql database
-            db_incident = models.Incident(**incident.dict())
+
+            
+
+            #Creating jira first
+            incident = schemas.IncidentCreate(**incident_data)
+            issue = await create_jira_ticket(incident)
+            
+            #Updating the incident with correct SO number
+            incident_data["so_number"] = issue["key"]
+            
+            #Saving to the database
+            db_incident = models.Incident(**incident_data)
             db.add(db_incident)
             db.commit()
             db.refresh(db_incident)
             
-            
+        
             #Sending the incident to Statuspage
-            incident_data = db_incident.__dict__ if isinstance (db_incident,models.Incident) else db_incident
             try:
+                incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
                 await create_statuspage_incident(incident_data,settings)
                 logger.info(f"Statuspage incident created with ID: {db_incident.id}")
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
                 )
-
-            # Alert integration with Opsgenie
-            try:
-                await create_alert(db_incident)
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                ) from e
-
-            # Jira integration
-            try:
-                issue = await create_jira_ticket(incident)
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                ) from e
-
+                
+         
             # Slack channel creation integration here
             try:
                 start_api_calls_time = time.time()
                 channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
                 channel_id = await create_slack_channel(channel_name)
-                logger.info(f"New Slack channel created with ID: {channel_id}")
-                logger.info(f"SLACK_GENERAL_OUTAGES_CHANNEL: {settings.SLACK_GENERAL_OUTAGES_CHANNEL}")
-
-
-                # Posting a message to the created channel
-                # incident_message = f"🚨 *New Incident Created* 🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} > {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
-                
                 incident_message = (
                     f"🚨 *New Incident Created* 🚨:\n\n"
                     f"*SO Number:* {db_incident.so_number}\n"
@@ -471,36 +439,33 @@ async def slack_interactions(
                     f"*End Time:* {db_incident.end_time}\n"
                     f"*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
                     f"*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
+                    f"*Jira Link:* {settings.jira_server}/browse/{db_incident.jira_issue_key}"
                 )
                 
                 await post_message_to_slack(channel_id, incident_message)
-                logger.info(f"Message posted to new channel {channel_id}")
+                
                 
                 # Posting message to general channel
-                general_outages_message = f"🚨New Incident Created in #{channel_name}🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} >{db_incident.so_number}> {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {db_incident.suspected_owning_team}"
+                general_outages_message = f"🚨New Incident Created in #{channel_name}🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} >{db_incident.so_number}> {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {db_incident.suspected_owning_team}\n"
                 
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
-                logger.info(
-                    f"Message posted to General Outages Channel: {settings.SLACK_GENERAL_OUTAGES_CHANNEL}"
-                )
-
-            
-
+               
                 end_api_calls_time = time.time()
                 print(
                     f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds"
                 )
 
             except SlackApiError as slack_error:
-                logger.error(
-                    f"Slack API error in create_slack_channel: {e.response['error']}"
-                )
-                logger.error(f"Full Slack error response: {slack_error.response}")
+                print(f"Slack API error in create_slack_channel: {slack_error.response['error']}")
+                
+            
+            
+          
+                
 
             except Exception as e:
-                logger.exception(f"Unexpected error occurred: {str(e)}")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"An unexpected error occurred: {str(e)}",
@@ -517,6 +482,12 @@ async def slack_interactions(
             )
 
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
+        
+        
+        
+        
+        
+        
         #Handling the fetching of incident from the SLACK form
         elif callback_id == "so_lookup_form" :
             try:
@@ -539,10 +510,10 @@ async def slack_interactions(
                         status_code=400, detail="SO Number is required but missing from the form submission."
                     )
 
-                logging.info(f"SO number: {so_number}")
                     
                 #fetching the incident from the database
                 db_incident = db.query(models.Incident).filter(models.Incident.so_number == so_number).first()
+                
                 if not db_incident:
                     return JSONResponse(
                         status_code=200,
@@ -564,8 +535,15 @@ async def slack_interactions(
                             }
                         }
                     )
+                
+                #Constructing jira URL by using the incident's jira issue key
+                jira_issue_key = db_incident.jira_issue_key
+                if not jira_issue_key:
+                    raise HTTPException(status_code=400, detail="Jira issue key is missing in the database.")
+                
+                jira_link = f"{settings.jira_server}/browse/{jira_issue_key}"
+    
             
-                   
                 #Sending the message to the user
                 headers = {
                     "Content-Type": "application/json",
@@ -582,6 +560,7 @@ async def slack_interactions(
                     f"*End Time:* {db_incident.end_time}\n"
                     f"*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
                     f"*Description:* {db_incident.description}\n"
+                    f"*Jira Link:* {jira_link}\n"
                 )
                 
                 response_payload = {
@@ -590,36 +569,32 @@ async def slack_interactions(
                     "as_user":True
                 }
 
-                
                 try:
                     response = requests.post(
-                        "https://slack.com/api/chat.postMessage", headers=headers, json=response_payload)
+                        "https://slack.com/api/chat.postMessage", headers=headers, json=response_payload, timeout=10)
                     response_data = response.json()
                     if response.status_code != 200 or not response_data.get("ok"):
-                        logging.error(f"Error sending Slack message: {response_data}")
+                        print(f"Error sending Slack message: {response_data}")
                         raise HTTPException(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail=f"An unexpected error occurred: {response_data['error']}",
                         )
                 except requests.RequestException as e:
-                    logger.error(f"Error sending Slack message: {str(e)}")
+                    print(f"Error sending Slack message: {str(e)}")
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"An unexpected error occurred: {str(e)}",
+                        detail=f"An unexpected error occurred",
                     )
             
-            #Additionaly the user will receive the incident detail with jira link to the incident
-            #Functionality needs to be developed and tested
+        
             
-            
-            
-            
+
             except KeyError as e:
-                logger.error(f"Error retrieving state values: {str(e)}")
+                print(f"Error retrieving state values: {str(e)}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="State values not found in the view payload",
                 )
 
     
-    return JSONResponse(status_code=response.status_code, content=response_data)
+    # return JSONResponse(status_code=response.status_code, content=response_data)

@@ -5,8 +5,6 @@ from typing import Optional,List
 
 class IncidentBase(BaseModel):
     """Base model for incident."""
-
-   
     affected_products: List[str]
     so_number:str = Field(..., description="SO Number")
     severity: List[str]
@@ -19,6 +17,7 @@ class IncidentBase(BaseModel):
     message_for_sp: Optional[str] = Field(None, min_length=0, max_length=250)
     statuspage_notification: bool = Field(False)
     separate_channel_creation: bool = Field(False)
+    jira_issue_key: str = None
 
 class IncidentCreate(IncidentBase):
     """Model for creating an incident."""

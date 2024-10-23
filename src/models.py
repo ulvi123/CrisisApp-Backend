@@ -25,9 +25,10 @@ class Incident(Base):
     separate_channel_creation = Column(Boolean, default=False, nullable=False)
     status = Column(String(50), index=True, nullable=True)
     created_at = Column(DateTime, nullable=True, default=datetime.now()) 
+    jira_issue_key = Column(String(250), nullable=True,unique=True)
 
     def __repr__(self):
-        return f"<Incident(id={self.id}, affected_products={self.affected_products}, severity={self.severity}, start_time={self.start_time}, end_time={self.end_time}, status={self.status})>"
+        return f"<Incident(id={self.id}, affected_products={self.affected_products}, severity={self.severity}, start_time={self.start_time}, end_time={self.end_time}, status={self.status}), created_at={self.created_at}), jira_issue_key={self.jira_issue_key}>"
     
     
 class UserToken(Base):
