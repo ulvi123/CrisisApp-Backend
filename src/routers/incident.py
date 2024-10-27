@@ -47,6 +47,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+settings = get_settings()
+
 
 # Load options at application startup
 options = load_options_from_file("options.json")
@@ -414,21 +416,12 @@ async def slack_interactions(
             db.refresh(db_incident)
             
         
-            #Sending the incident to Statuspage
-            # try:
-            #     incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
-            #     await create_statuspage_incident(incident_data,settings)
-            #     logger.info(f"Statuspage incident created with ID: {db_incident.id}")
-            # except Exception as e:
-            #     raise HTTPException(
-            #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-            #     )
+        
                 
          
             # Slack channel creation integration here
             try:
-                start_api_calls_time = time.time()
-                channel_name = f"incident-{db_incident.suspected_owning_team[0].replace( ' ', '-' ).lower()}"
+                channel_name = f"incident-{db_incident.so_number}".lower()
                 channel_id = await create_slack_channel(channel_name)
                 incident_message = (
                     f"🚨 *New Incident Created* 🚨:\n\n"
@@ -444,7 +437,7 @@ async def slack_interactions(
                 )
                 
                 await post_message_to_slack(channel_id, incident_message)
-                
+                logger.info(f"Posted message to incident channel {channel_name}")
                 
                 # Posting message to general channel
                 general_outages_message = f"🚨New Incident Created in #{channel_name}🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} >{db_incident.so_number}> {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {db_incident.suspected_owning_team}\n"
@@ -452,35 +445,32 @@ async def slack_interactions(
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
-               
-                end_api_calls_time = time.time()
-                print(
-                    f"Time taken for API calls: {end_api_calls_time - start_api_calls_time} seconds"
-                )
+                logger.info("Posted message to general outages channel")
 
             except SlackApiError as slack_error:
-                print(f"Slack API error in create_slack_channel: {slack_error.response['error']}")
-                
+                logger.error(f"Slack API error: {slack_error.response['error']}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to send Slack notifications: {slack_error.response['error']}"
+                )
+              
+            
+            #Sending the incident to Statuspage
+            try:
+                incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
+                await create_statuspage_incident(incident_data,settings)
+                logger.info(f"Statuspage incident created with ID: {db_incident.id}")
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+                )  
             
             
-          
-                
-
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"An unexpected error occurred: {str(e)}",
                 ) from e
-
-            if db_incident.end_time is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="End time not found"
-                )
-
-            db_time = time.time()
-            print(
-                f"Time to save incident to database: {db_time - start_api_calls_time} seconds"
-            )
 
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
                 
