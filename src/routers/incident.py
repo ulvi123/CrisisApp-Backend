@@ -192,10 +192,10 @@ async def handling_slash_commands(
             },
         )
 
-        
+      
 
 #submitting an incident
-@router.post("/slack/interactions", status_code=status.HTTP_201_CREATED)
+@router.post("/slack/interactions", status_code=status.HTTP_201_CREATED,response_model=schemas.IncidentResponse)    
 async def slack_interactions(
     request: Request,
     db: Session = Depends(get_db),
