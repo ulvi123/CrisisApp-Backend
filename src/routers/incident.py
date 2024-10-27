@@ -1,7 +1,7 @@
-import asyncio
+# import asyncio
 import logging
 from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
-import httpx
+# import httpx
 from sqlalchemy.orm import Session
 from src import models
 from src import schemas
@@ -11,7 +11,7 @@ from src.utils import (
     create_modal_view,
     load_options_from_file,
     get_modal_view,
-    get_incident_details_modal
+    # get_incident_details_modal
 )
 from src.helperFunctions.status_page import create_statuspage_incident
 from starlette.responses import JSONResponse
@@ -405,6 +405,7 @@ async def slack_interactions(
             
             #Updating the incident with correct SO number
             incident_data["so_number"] = issue["key"]
+            incident_data["jira_issue_key"] = issue["key"]
             
             #Saving to the database
             db_incident = models.Incident(**incident_data)
@@ -414,14 +415,14 @@ async def slack_interactions(
             
         
             #Sending the incident to Statuspage
-            try:
-                incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
-                await create_statuspage_incident(incident_data,settings)
-                logger.info(f"Statuspage incident created with ID: {db_incident.id}")
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                )
+            # try:
+            #     incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
+            #     await create_statuspage_incident(incident_data,settings)
+            #     logger.info(f"Statuspage incident created with ID: {db_incident.id}")
+            # except Exception as e:
+            #     raise HTTPException(
+            #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+            #     )
                 
          
             # Slack channel creation integration here
@@ -482,12 +483,7 @@ async def slack_interactions(
             )
 
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
-        
-        
-        
-        
-        
-        
+                
         #Handling the fetching of incident from the SLACK form
         elif callback_id == "so_lookup_form" :
             try:

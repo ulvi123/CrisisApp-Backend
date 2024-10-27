@@ -16,6 +16,8 @@ from src.utils import encrypt_token
 from .database import get_db,SessionLocal
 from cryptography.fernet import Fernet
 import asyncio
+from fastapi import HTTPException, status,Depends
+
 
 
 

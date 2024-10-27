@@ -48,3 +48,27 @@ async def create_statuspage_incident(incident_data,settings):
     except Exception as e:
         logging.error(f"Failed to create statuspage incident: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create statuspage incident")
+    
+    
+
+
+#updating the incident status
+
+async def update_statuspage_incident(incident_id,status,settings):
+    headers = {
+        "Authorization":f"Bearer{settings.statuspage_api_key}",
+        "Content-Type":"application/json",
+    }
+    
+    updated_incident_payload = {
+        "incident":{
+            "status":status,
+            "component_ids":[settings.statuspage_component_id],
+            "page_id":settings.statuspage_page_id,
+            "name":f"Incident: {incident_id}",
+        }
+    }
+    
+    
+    
+    
