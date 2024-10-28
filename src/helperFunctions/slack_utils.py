@@ -89,6 +89,7 @@ async def create_slack_channel(channel_name: str) -> str:
             slack_client.conversations_create,
             name=unique_channel_name,
             is_private=False,
+            is_group=False,
         )
 
         logger.info(f"Slack API response in create_slack_channel: {response}")
@@ -96,7 +97,9 @@ async def create_slack_channel(channel_name: str) -> str:
         if response["ok"]:
             channel_id = response["channel"]["id"]
             logger.info(f"Channel created successfully. Channel ID: {channel_id}")
+            await asyncio.sleep(2)
             return channel_id
+        
 
         logger.error(
             f"Failed to create channel. Error: {response.get('error', 'Unknown error')}"
@@ -109,7 +112,7 @@ async def create_slack_channel(channel_name: str) -> str:
     except SlackApiError as e:
         logger.error(f"Slack API error in create_slack_channel: {e.response['error']}")
         logger.error(f"Full error response: {e.response}")
-        if e.response["error"] == "rate_limited":
+        if e.response["error"] == "ratelimited":
             retry_after = int(e.response["headers"].get("Retry-After", 1))
             logger.info(f"Rate limited. Retrying after {retry_after} seconds")
             await asyncio.sleep(retry_after)
@@ -126,3 +129,10 @@ async def create_slack_channel(channel_name: str) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error: {str(e)}",
         ) from e
+
+
+
+
+
+
+

@@ -415,27 +415,30 @@ async def slack_interactions(
             db.commit()
             db.refresh(db_incident)
             
-        
-        
-                
-         
             # Slack channel creation integration here
             try:
                 channel_name = f"incident-{db_incident.so_number}".lower()
                 channel_id = await create_slack_channel(channel_name)
                 incident_message = (
-                    f"🚨 *New Incident Created* 🚨:\n\n"
-                    f"*SO Number:* {db_incident.so_number}\n"
-                    f"*Description:* {db_incident.start_time} > {db_incident.severity} > {db_incident.affected_products} Outage\n"
-                    f"*Severity:* {db_incident.severity}\n"
-                    f"*Affected Products:* {', '.join(db_incident.affected_products)}\n"
-                    f"*Start Time:* {db_incident.start_time}\n"
-                    f"*End Time:* {db_incident.end_time}\n"
-                    f"*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
-                    f"*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}"
-                    f"*Jira Link:* {settings.jira_server}/browse/{db_incident.jira_issue_key}"
+                    f"\U0001F6A8 *New Incident Created* \U0001F6A8\n\n"
+                    f"*Incident Summary:*\n"
+                    f"----------------------------------\n"
+                    f"🔹 *SO Number:* {db_incident.so_number}\n"
+                    f"🔹 *Severity Level:* {', '.join(db_incident.severity)}\n"
+                    f"🔹 *Affected Products:* {', '.join(db_incident.affected_products)}\n"
+                    f"🔹 *Customer Impact:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
+                    f"🔹 *Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}\n"
+                    f"\n"
+                    f"*Time Details:*\n"
+                    f"----------------------------------\n"
+                    f"🕒 *Start Time:* {db_incident.start_time}\n"
+                    f"🕒 *End Time:* {db_incident.end_time}\n"
+                    f"\n"
+                    f"*Additional Information:*\n"
+                    f"----------------------------------\n"
+                    f"🔗 *Jira Link:* [View Incident in Jira]({settings.jira_server}/browse/{db_incident.jira_issue_key})"
                 )
-                
+
                 await post_message_to_slack(channel_id, incident_message)
                 logger.info(f"Posted message to incident channel {channel_name}")
                 
@@ -458,8 +461,16 @@ async def slack_interactions(
             #Sending the incident to Statuspage
             try:
                 incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
-                await create_statuspage_incident(incident_data,settings)
-                logger.info(f"Statuspage incident created with ID: {db_incident.id}")
+                response = await create_statuspage_incident(incident_data,settings)
+                
+                if response.code == 201:
+                    logger.info(f"Statuspage incident created with ID: {response.json()['id']}")
+                else:
+                    logger.error(f"Failed to create Statuspage incident: {response.json()}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to create Statuspage incident",
+                    )
             except Exception as e:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -472,6 +483,7 @@ async def slack_interactions(
                     detail=f"An unexpected error occurred: {str(e)}",
                 ) from e
 
+            logger.info(f"Returning response with incident_id: {db_incident.id}, issue_key: {issue['key']}")
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
                 
         #Handling the fetching of incident from the SLACK form
@@ -583,4 +595,4 @@ async def slack_interactions(
                 )
 
     
-    # return JSONResponse(status_code=response.status_code, content=response_data)
+    return JSONResponse(status_code=response.status_code, content=response_data)

@@ -8,28 +8,31 @@ async def create_statuspage_incident(incident_data,settings):
     headers = {
         "Authorization": f"Bearer {settings.statuspage_api_key}",
         "Content-Type":"application/json",
-    }
-    
-    #the payload
-    # Create the incident_payload using the incident_data
+    } 
+    #improved payload formatting
     incident_payload = {
-            "incident": {
-                "name": f"Incident: {incident_data.get('so_number')}",
-                "status": "investigating",
-                "body": f"An incident has been reported for SO Number: {incident_data.get('so_number')}. "
-                        f"Severity: {', '.join(incident_data.get('severity', [])) if incident_data.get('severity') else 'None'}. "
-                        f"Affected Products: {', '.join(incident_data.get('affected_products', [])) if incident_data.get('affected_products') else 'None'}. "
-                        f"Description: {incident_data.get('description', 'No description provided')}. "
-                        f"Customer Affected: {'Yes' if incident_data.get('p1_customer_affected') else 'No'}.",
-                "components": {
-                    settings.statuspage_component_id: "degraded_performance"  # Assuming the status I want to set for this component
-                },
-                "component_ids": [settings.statuspage_component_id],  # IDs of components affected
-                "deliver_notifications": True,  # Whether to send notifications for this incident
-            }
+        "incident": {
+            "name": f"🚨 Incident Report: {incident_data.get('so_number')} 🚨",
+            "status": "investigating",
+            "body": (
+                f"*Incident Summary:*\n"
+                f"----------------------------------\n"
+                f"🔹 *SO Number:* {incident_data.get('so_number')}\n"
+                f"🔹 *Severity Level:* {', '.join(incident_data.get('severity', [])) if incident_data.get('severity') else 'None'}\n"
+                f"🔹 *Affected Products:* {', '.join(incident_data.get('affected_products', [])) if incident_data.get('affected_products') else 'None'}\n"
+                f"\n"
+                f"*Additional Details:*\n"
+                f"----------------------------------\n"
+                f"📝 *Description:* {incident_data.get('description', 'No description provided')}\n"
+                f"👥 *Customer Affected:* {'Yes' if incident_data.get('p1_customer_affected') else 'No'}"
+            ),
+            "components": {
+                settings.statuspage_component_id: "degraded_performance"  # Assuming the status I want to set for this component
+            },
+            "component_ids": [settings.statuspage_component_id],  # IDs of components affected
+            "deliver_notifications": True,  # Whether to send notifications for this incident
         }
-
-
+    }
     
     try:
         response = requests.post(
@@ -68,6 +71,10 @@ async def update_statuspage_incident(incident_id,status,settings):
             "name":f"Incident: {incident_id}",
         }
     }
+    
+    
+    
+    
     
     
     
