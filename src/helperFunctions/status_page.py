@@ -1,10 +1,15 @@
 from fastapi import HTTPException
 import requests
 import logging
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from config import get_settings, Settings
+from src.database import get_db
 
+settings = get_settings()
 
-
-async def create_statuspage_incident(incident_data,settings):
+#Create statuspage incident
+async def create_statuspage_incident(incident_data,settings,db: Session = Depends(get_db)):
     headers = {
         "Authorization": f"Bearer {settings.statuspage_api_key}",
         "Content-Type":"application/json",
@@ -34,11 +39,13 @@ async def create_statuspage_incident(incident_data,settings):
         }
     }
     
+    
+    
     try:
         response = requests.post(
             f"{settings.statuspage_url}/{settings.statuspage_page_id}/incidents",
             json=incident_payload,
-            headers=headers
+            headers=headers,
         )
         response_data = response.json()
         
@@ -46,36 +53,63 @@ async def create_statuspage_incident(incident_data,settings):
             logging.error(f"Failed to create statuspage incident: {response_data}")
             raise HTTPException(status_code=500, detail="Failed to create statuspage incident")
         
+        #Saving the incident ID for future reference to update the incident status in the statuspage
+        incident_data.statuspage_incident_id = response_data['id']
+        db.commit()
+        db.refresh(incident_data)
         logging.info(f"Statuspage incident created: {response_data}")
         return response_data
+    
     except Exception as e:
         logging.error(f"Failed to create statuspage incident: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create statuspage incident")
     
     
-
-
-#updating the incident status
-
-async def update_statuspage_incident(incident_id,status,settings):
+    
+#Update statuspage incident status   
+async def update_statuspage_incident_status(db_incident, new_status,settings,additional_info=""):
+    
+    if not db_incident.statuspage_incident_id:
+      raise HTTPException(status_code=400, detail="No statuspage incident ID found in the database.")
+    
     headers = {
-        "Authorization":f"Bearer{settings.statuspage_api_key}",
+        "Authorization": f"Bearer {settings.statuspage_api_key}",
         "Content-Type":"application/json",
     }
     
-    updated_incident_payload = {
+    update_payload = {
         "incident":{
-            "status":status,
-            "component_ids":[settings.statuspage_component_id],
-            "page_id":settings.statuspage_page_id,
-            "name":f"Incident: {incident_id}",
+            "id":db_incident.statuspage_incident_id,
+            "status":new_status,
+            "body":{
+                f"Status updated to '{new_status.capitalize()}'.\n\n"
+                f"{additional_info if additional_info else 'No additional information provided.'}"
+            }
         }
     }
     
+    try:
+        response = requests.patch(
+            f"{settings.statuspage_url}/{settings.statuspage_page_id}/incidents/{db_incident.statuspage_incident_id}",
+            json=update_payload,
+            headers=headers,
+        )
+        
+        response_data = response.json()
+        if response.status_code != 200:
+            logging.error(f"Failed to update statuspage incident: {response_data}")
+            raise HTTPException(status_code=500, detail="Failed to update statuspage incident")
+        
+        logging.info(f"Statuspage incident updated: {response_data}")
+        return response_data
+    
+    except requests.RequestException as e:
+        logging.error(f"Failed to update statuspage incident: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update statuspage incident")
+      
+      
     
     
-    
-    
-    
+ 
     
     

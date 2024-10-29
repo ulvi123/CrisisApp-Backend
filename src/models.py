@@ -26,6 +26,7 @@ class Incident(Base):
     status = Column(String(50), index=True, nullable=True)
     created_at = Column(DateTime, nullable=True, default=datetime.now()) 
     jira_issue_key = Column(String(250), nullable=True,unique=True)
+    statuspage_incident_id = Column(String(250), nullable=True)
 
     def __repr__(self):
         return f"<Incident(id={self.id}, affected_products={self.affected_products}, severity={self.severity}, start_time={self.start_time}, end_time={self.end_time}, status={self.status}), created_at={self.created_at}), jira_issue_key={self.jira_issue_key}>"
@@ -38,4 +39,6 @@ class UserToken(Base):
     user_id = Column(String(250),unique=True, index=True, nullable=False)
     encrypted_token = Column(String(250), index=True, nullable=False)
     role = Column(String(250), index=True)
-    created_at = Column(DateTime, nullable=True, default=datetime.now())
+    created_at = Column(DateTime, nullable=True, default=datetime.now())    
+  
+  

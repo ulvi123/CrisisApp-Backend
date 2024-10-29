@@ -97,6 +97,10 @@ async def create_slack_channel(channel_name: str) -> str:
         if response["ok"]:
             channel_id = response["channel"]["id"]
             logger.info(f"Channel created successfully. Channel ID: {channel_id}")
+            
+            #Enabling the bot to join the channel when it is created
+            await run_in_executor(slack_client.conversations_join, channel=channel_id)
+            logger.info(f"Bot enabled to join the channel: {channel_id}")
             await asyncio.sleep(2)
             return channel_id
         

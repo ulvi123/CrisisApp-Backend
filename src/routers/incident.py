@@ -1,36 +1,33 @@
 # import asyncio
 import logging
-from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
-# import httpx
-from sqlalchemy.orm import Session
+import requests
+import json
 from src import models
 from src import schemas
+from pydantic import ValidationError
+from datetime import datetime
+from fastapi import APIRouter, Request, HTTPException, Header, status, Depends
+from sqlalchemy.orm import Session
 from src.database import get_db
 from src.utils import (
     verify_slack_request,
     create_modal_view,
     load_options_from_file,
     get_modal_view,
-    # get_incident_details_modal
+    update_modal_view
 )
-from src.helperFunctions.status_page import create_statuspage_incident
+from src.helperFunctions.status_page import create_statuspage_incident,update_statuspage_incident_status
 from starlette.responses import JSONResponse
 from config import get_settings, Settings
-import requests
-import json
-from pydantic import ValidationError
-from datetime import datetime
 from src.helperFunctions.opsgenie import create_alert
 from src.helperFunctions.jira import create_jira_ticket
 from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_channel
-
 from urllib.parse import parse_qs
-from pydantic import BaseModel, ValidationError
-import time
+from pydantic import ValidationError
 from slack_sdk.errors import SlackApiError
-from src.helperFunctions.helper import get_current_user
-from src.models import UserToken
-import json
+
+
+
 
 
 #Logging configuration
@@ -43,12 +40,11 @@ logging.basicConfig(
         logging.FileHandler("app.log")  # Optionally log to a file
     ]
 )
-
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+#Fetching the settings from the configuration file
 settings = get_settings()
-
 
 # Load options at application startup
 options = load_options_from_file("options.json")
@@ -192,9 +188,54 @@ async def handling_slash_commands(
             },
         )
 
-      
+    #slack command to update the incident status in statuspage-logic below
+    elif command == "/update-incident":
+        logger.info("Handling the incident update command")
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}",
+        }
+        
+        modal_view = await update_modal_view(callback_id="statuspage_update")
+        payload = {"trigger_id": trigger_id, "view": modal_view}
+        logger.debug(json.dumps(payload, indent=2))
+        
+        try:
+            slack_response = requests.post(\
+                "https://slack.com/api/views.open",
+                headers=headers,
+                json=payload,
+                timeout=3,
+            )
+            slack_response.raise_for_status()  # Raise an exception for HTTP errors
+            slack_response_data = slack_response.json()  # Parse JSON response
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to open the form: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to open the form: {str(e)}"
+            )
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Slack response: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
+            )
 
-#submitting an incident
+        if not slack_response_data.get("ok"):
+            logger.error(f"Slack API error: {slack_response_data}")
+            raise HTTPException(
+                status_code=400, detail=f"Slack API error: {slack_response_data}"
+            )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "response_type": "ephemeral",
+                "text": "Incident update form has been opened successfully.",
+            },
+        )
+         
+#Route logic to create an incident
 @router.post("/slack/interactions", status_code=status.HTTP_201_CREATED,response_model=schemas.IncidentResponse)    
 async def slack_interactions(
     request: Request,
@@ -249,6 +290,11 @@ async def slack_interactions(
     
     # Processing the actual interaction based on the propagated event
     if payload.get("type") == "view_submission":
+        """
+        
+        Below logic is for handling various incident related operations such as creating, updating, and fetching.
+        
+        """
         # Handling the incident form creation submission
         if callback_id == "incident_form":
             try:
@@ -398,9 +444,6 @@ async def slack_interactions(
                     status_code=400, detail=f"Failed to parse request body: {str(e)}"
                 ) from e
 
-
-            
-
             #Creating jira first
             incident = schemas.IncidentCreate(**incident_data)
             issue = await create_jira_ticket(incident)
@@ -415,7 +458,7 @@ async def slack_interactions(
             db.commit()
             db.refresh(db_incident)
             
-            # Slack channel creation integration here
+            # Slack channel creation and message
             try:
                 channel_name = f"incident-{db_incident.so_number}".lower()
                 channel_id = await create_slack_channel(channel_name)
@@ -423,16 +466,15 @@ async def slack_interactions(
                     f"\U0001F6A8 *New Incident Created* \U0001F6A8\n\n"
                     f"*Incident Summary:*\n"
                     f"----------------------------------\n"
-                    f"🔹 *SO Number:* {db_incident.so_number}\n"
-                    f"🔹 *Severity Level:* {', '.join(db_incident.severity)}\n"
-                    f"🔹 *Affected Products:* {', '.join(db_incident.affected_products)}\n"
-                    f"🔹 *Customer Impact:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
-                    f"🔹 *Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}\n"
+                    f"*SO Number:* {db_incident.so_number}\n"
+                    f"*Severity Level:* {', '.join(db_incident.severity)}\n"
+                    f"*Affected Products:* {', '.join(db_incident.affected_products)}\n"
+                    f"*Customer Impact:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
+                    f"*Suspected Owning Team:* {', '.join(db_incident.suspected_owning_team)}\n"
                     f"\n"
                     f"*Time Details:*\n"
                     f"----------------------------------\n"
-                    f"🕒 *Start Time:* {db_incident.start_time}\n"
-                    f"🕒 *End Time:* {db_incident.end_time}\n"
+                    f"Start Time: {db_incident.start_time}\n"
                     f"\n"
                     f"*Additional Information:*\n"
                     f"----------------------------------\n"
@@ -442,9 +484,23 @@ async def slack_interactions(
                 await post_message_to_slack(channel_id, incident_message)
                 logger.info(f"Posted message to incident channel {channel_name}")
                 
-                # Posting message to general channel
-                general_outages_message = f"🚨New Incident Created in #{channel_name}🚨:\n\n*Description:* {db_incident.start_time} > {db_incident.severity} >{db_incident.so_number}> {db_incident.affected_products} Outage\n*Severity:* {db_incident.severity}\n*Affected Products:* {', '.join(db_incident.affected_products)}\n*Start Time:* {db_incident.start_time}\n*End Time:* {db_incident.end_time}\n*Customer Affected:* {'Yes' if db_incident.p1_customer_affected else 'No'}\n*Suspected Owning Team:* {db_incident.suspected_owning_team}\n"
-                
+                # Posting message to general outages channel
+                general_outages_message = (
+                    f"\U0001F6A8 *New Incident Created* \U0001F6A8\n\n"
+                    f"Incident Summary\n"
+                    f"------------------------\n"
+                    f"SO Number: {db_incident.so_number}\n"
+                    f"Severity: {db_incident.severity}\n"
+                    f"Affected Products: {', '.join(db_incident.affected_products)}\n"
+                    f"Customer Impact: {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
+                    f"Suspected Owning Team: {db_incident.suspected_owning_team}\n\n"
+                    f"*Time Details:*\n"
+                    f"------------------------\n"
+                    f"Start Time: {db_incident.start_time}\n"
+                    f"*Additional Information:*\n"
+                    f"----------------------------------\n"
+                    f"Join the discussion in the newly created incident channel: <#{channel_id}>"
+                )
                 await post_message_to_slack(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
@@ -457,6 +513,15 @@ async def slack_interactions(
                     detail=f"Failed to send Slack notifications: {slack_error.response['error']}"
                 )
               
+            #Handling the opsgenie alert creation request
+            opsgenie_response = await create_alert(db_incident)
+            if opsgenie_response["status_code"] == 201:
+                logger.info(f"OpsGenie alert created with ID: {response.json()['id']}")
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to create OpsGenie alert",
+                )          
             
             #Sending the incident to Statuspage
             try:
@@ -485,7 +550,8 @@ async def slack_interactions(
 
             logger.info(f"Returning response with incident_id: {db_incident.id}, issue_key: {issue['key']}")
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
-                
+                 
+       
         #Handling the fetching of incident from the SLACK form
         elif callback_id == "so_lookup_form" :
             try:
@@ -594,5 +660,66 @@ async def slack_interactions(
                     detail="State values not found in the view payload",
                 )
 
+
+        #Handling the updating of incident in the statuspage
+        elif callback_id == "statuspage_update":
+            #Extracting values from the slack payload
+            so_number = state_values.get("so_number", {}).get("so_number_action", {}).get("value")
+            new_status = state_values.get("status_update_block", {}).get("status_action", {}).get("selected_option", {}).get("value")
+            additional_info = state_values.get("additional_info_block", {}).get("additional_info_action", {}).get("value", "")
+            
+            #Introducing the validations section
+            if not so_number and not new_status:
+                raise HTTPException(status_code=400, detail="SO Number and new status are required.")
+            #fetching the incident from the database
+            db_incident = db.query(models.Incident).filter(models.Incident.so_number == so_number).first()
+            if not db_incident and not db_incident.statuspage_incident_id:
+                raise HTTPException(status_code=404, detail="No incident found with the given SO Number.")
+            
+            #Updating the status in the statuspage
+            try:
+                await update_statuspage_incident_status(
+                    db_incident = db_incident,
+                    new_status=new_status,
+                    additional_info=additional_info,
+                    settings = settings
+                )
+                
+                #Updating the incident status in the database
+                db_incident.status = new_status
+                db.commit()
+                db.refresh(db_incident)
+                
+                #Returning a response to the user
+                return JSONResponse(
+                    status_code = 200,
+                    content = {
+                        "response_type": "ephemeral",
+                        "view": {
+                            "type": "modal",
+                            "title": {"type": "plain_text", "text": "Status Update"},
+                            "close": {"type": "plain_text", "text": "Close"},
+                            "blocks": [
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"Status of SO Number: *{so_number}* has been updated to *{new_status}*."
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                )
+                
+            except Exception as e:
+                logging.error(f"Failed to update statuspage incident status: {str(e)}")
+                raise HTTPException(status_code=500, detail="Failed to update statuspage incident status")
+
+        
     
     return JSONResponse(status_code=response.status_code, content=response_data)
+
+
+
+

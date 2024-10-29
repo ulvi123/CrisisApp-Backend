@@ -339,3 +339,52 @@ def encrypt_token(token:str,key:str) ->str:
 def decrypt_token(encrypted_token:str,key:str) ->str:
     fernet = Fernet(key.encode("utf-8"))
     return fernet.decrypt(encrypted_token.encode()).decode()
+
+
+#Updating the modal with incident details
+async def update_modal_view(callback_id:str) -> dict:
+    return {
+       "type": "modal",
+        "callback_id": "statuspage_update",
+        "title": {"type": "plain_text", "text": "Update Incident"},
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "so_number",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "so_number_action",
+                    "placeholder": {"type": "plain_text", "text": "Enter the SO Number"},
+                },
+                "label": {"type": "plain_text", "text": "SO Number"},
+            },
+            {
+                "type": "input",
+                "block_id": "status_update_block",
+                "element": {
+                    "type": "static_select",
+                    "action_id": "status_action",
+                    "placeholder": {"type": "plain_text", "text": "Select new status"},
+                    "options": [
+                        {"text": {"type": "plain_text", "text": "Resolved"}, "value": "resolved"},
+                        {"text": {"type": "plain_text", "text": "Monitoring"}, "value": "monitoring"},
+                        {"text": {"type": "plain_text", "text": "Degraded Performance"}, "value": "degraded_performance"}
+                    ],
+                },
+                "label": {"type": "plain_text", "text": "Update Status"},
+            },
+            {
+                "type": "input",
+                "block_id": "additional_info_block",
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "additional_info_action",
+                    "multiline": True,
+                    "placeholder": {"type": "plain_text", "text": "Add any additional information (optional)"}
+                },
+                "label": {"type": "plain_text", "text": "Additional Information"},
+                "optional": True
+            }
+        ],
+        "submit": {"type": "plain_text", "text": "Submit"}
+    }

@@ -34,3 +34,10 @@ class IncidentResponse(IncidentBase):
         
 class IncidentOut(BaseModel):
     Incident: IncidentResponse
+
+
+
+class IncidenUpdate(BaseModel):
+    status: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = Field(None, min_length=0, max_length=250)
+    severity: Optional[List[str]] = Field(None)
