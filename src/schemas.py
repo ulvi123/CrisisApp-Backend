@@ -24,6 +24,7 @@ class IncidentCreate(IncidentBase):
     pass
 
 
+
 class IncidentResponse(IncidentBase):
     """Response model for incident."""
     id: int

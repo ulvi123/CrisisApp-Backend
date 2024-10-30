@@ -514,39 +514,37 @@ async def slack_interactions(
                 )
               
             #Handling the opsgenie alert creation request
-            opsgenie_response = await create_alert(db_incident)
-            if opsgenie_response["status_code"] == 201:
-                logger.info(f"OpsGenie alert created with ID: {response.json()['id']}")
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to create OpsGenie alert",
-                )          
+            # opsgenie_response = await create_alert(db_incident)
+            # if opsgenie_response["status_code"] == 201:
+            #     logger.info(f"OpsGenie alert created with ID: {response.json()['id']}")
+            # else:
+            #     raise HTTPException(
+            #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            #         detail="Failed to create OpsGenie alert",
+            #     )          
             
             #Sending the incident to Statuspage
-            try:
-                incident_data = db_incident.__dict__  if isinstance (db_incident,models.Incident) else db_incident
-                response = await create_statuspage_incident(incident_data,settings)
-                
-                if response.code == 201:
-                    logger.info(f"Statuspage incident created with ID: {response.json()['id']}")
-                else:
-                    logger.error(f"Failed to create Statuspage incident: {response.json()}")
+            if db_incident.statuspage_notification:
+                try:
+                    statuspage_response = await create_statuspage_incident(db_incident, settings, db)
+                    logging.info(f"Statuspage incident created with ID: {statuspage_response.get('id')}")
+
+                    # Update the incident with statuspage information
+                    db_incident.statuspage_incident_id = statuspage_response.get('id')
+                    db.commit()
+                    
+                except Exception as e:
+                    logging.error(
+                        f"Unexpected error creating Statuspage incident for SO {db_incident.so_number}: "
+                        f"{str(e)}"
+                    )
+                    # Update the incident status to reflect the failure
+                    db_incident.status = "STATUSPAGE_CREATION_FAILED"
+                    db.commit()
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to create Statuspage incident",
+                        detail=f"Unexpected error creating Statuspage incident: {str(e)}"
                     )
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-                )  
-            
-            
-            except Exception as e:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"An unexpected error occurred: {str(e)}",
-                ) from e
 
             logger.info(f"Returning response with incident_id: {db_incident.id}, issue_key: {issue['key']}")
             return {"incident_id": db_incident.id, "issue_key": issue["key"]}
@@ -663,18 +661,27 @@ async def slack_interactions(
 
         #Handling the updating of incident in the statuspage
         elif callback_id == "statuspage_update":
+            state_values = payload.get("view",{}).get("state",{}).get("values",{})
             #Extracting values from the slack payload
             so_number = state_values.get("so_number", {}).get("so_number_action", {}).get("value")
+            if not so_number:
+                logging.error("Missing 'SO_number_block' in the Slack payload.")
+                raise HTTPException(status_code=400, detail="SO Number is required.")
             new_status = state_values.get("status_update_block", {}).get("status_action", {}).get("selected_option", {}).get("value")
             additional_info = state_values.get("additional_info_block", {}).get("additional_info_action", {}).get("value", "")
             
             #Introducing the validations section
             if not so_number and not new_status:
                 raise HTTPException(status_code=400, detail="SO Number and new status are required.")
-            #fetching the incident from the database
+            
+            #Fetching the incident from the database
+             # Fetch incident from database
             db_incident = db.query(models.Incident).filter(models.Incident.so_number == so_number).first()
-            if not db_incident and not db_incident.statuspage_incident_id:
-                raise HTTPException(status_code=404, detail="No incident found with the given SO Number.")
+            if not db_incident:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"No incident found with SO Number: {so_number}"
+                )
             
             #Updating the status in the statuspage
             try:
