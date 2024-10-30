@@ -1,21 +1,25 @@
-from typing import Any, Dict, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from fastapi import HTTPException,status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError
 import requests
 import logging
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from config import get_settings, Settings
 from src import models
+from src.schemas import IncidentBase
 from src.database import get_db
 import httpx
 
 
 settings = get_settings()
 
-class StatusResponse(BaseModel):
-    incident_id:str
-    issue_key:str
+class StatuspageCreationResponse(BaseModel):
+    incident_id: str
+    so_number: str
+    statuspage_incident_id: str
+
     
 class StatuspageStatusUpdate(BaseModel):
     incident_id: str
@@ -27,16 +31,16 @@ async def create_statuspage_incident(incident_data,settings,db: Session = Depend
     headers = {
         "Authorization": f"Bearer {settings.statuspage_api_key}",
         "Content-Type":"application/json",
-    } 
+    }
     
     incident_dict = {
-        "id": incident_data.id,
+        "id": str(incident_data.id),
         "so_number": incident_data.so_number,
-        "affected_products": incident_data.affected_products or [],  # Handle possible None
-        "severity": incident_data.severity or [],  # Handle possible None
+        "affected_products": incident_data.affected_products or [],
+        "severity": incident_data.severity or [],
         "suspected_owning_team": incident_data.suspected_owning_team or [],
-        "start_time": incident_data.start_time.isoformat() if incident_data.start_time else None,
-        "end_time": incident_data.end_time.isoformat() if incident_data.end_time else None,
+        "start_time": incident_data.start_time,  # Keep as datetime object
+        "end_time": incident_data.end_time,      # Keep as datetime object
         "p1_customer_affected": incident_data.p1_customer_affected,
         "suspected_affected_components": incident_data.suspected_affected_components or [],
         "description": incident_data.description or "No description provided",
@@ -54,18 +58,18 @@ async def create_statuspage_incident(incident_data,settings,db: Session = Depend
             "body": (
                 f"*Incident Summary:*\n"
                 f"----------------------------------\n"
-                f"🔹 *SO Number:* {incident_dict['so_number']}\n"
-                f"🔹 *Severity Level:* {', '.join(incident_dict['severity'])}\n"
-                f"🔹 *Affected Products:* {', '.join(incident_dict['affected_products'])}\n"
-                f"🔹 *Suspected Teams:* {', '.join(incident_dict['suspected_owning_team'])}\n"
-                f"🔹 *Start Time:* {incident_dict['start_time']}\n"
-                f"🔹 *Affected Components:* {', '.join(incident_dict['suspected_affected_components'])}\n"
+                f"*SO Number:* {incident_dict['so_number']}\n"
+                f"*Severity Level:* {', '.join(incident_dict['severity'])}\n"
+                f"*Affected Products:* {', '.join(incident_dict['affected_products'])}\n"
+                f"*Suspected Teams:* {', '.join(incident_dict['suspected_owning_team'])}\n"
+                f"*Start Time:* {incident_dict['start_time']}\n"
+                f"*Affected Components:* {', '.join(incident_dict['suspected_affected_components'])}\n"
                 f"\n"
                 f"*Additional Details:*\n"
                 f"----------------------------------\n"
-                f"📝 *Description:* {incident_dict['description']}\n"
-                f"📢 *Message:* {incident_dict['message_for_sp'] or 'No additional message'}\n"
-                f"👥 *Customer Affected:* {'Yes' if incident_dict['p1_customer_affected'] else 'No'}"
+                f"*Description:* {incident_dict['description']}\n"
+                f"*Message:* {incident_dict['message_for_sp'] or 'No additional message'}\n"
+                f"*Customer Affected:* {'Yes' if incident_dict['p1_customer_affected'] else 'No'}"
             ),
             "components": {
                 settings.statuspage_component_id: "degraded_performance"
@@ -90,29 +94,34 @@ async def create_statuspage_incident(incident_data,settings,db: Session = Depend
         logging.info(f"Statuspage response: {response.status_code} - {response.text}")
         response_data = response.json()
         
-        
-        simplified_response = {
-            "incident_id": incident_data.id,
-            "issue_key": incident_data.so_number
-        }
-        
         if response.status_code not in (200, 201) or not response_data.get("id"):
             logging.error(f"Failed to create statuspage incident: Status {response.status_code} - {response_data}")
             raise HTTPException(status_code=500, detail=f"Failed to create statuspage incident: {response_data}")
         
     
         #Saving the incident ID for future reference to update the incident status in the statuspage
-        if response_data.get('id'):
-            incident_data.statuspage_incident_id = response_data['id']
-            db.commit()
-            db.refresh(incident_data)
+        statuspage_incident_id = str(response_data['id'])
+        incident_data.statuspage_incident_id = statuspage_incident_id
+        db.commit()
+        db.refresh(incident_data)
         
-        logging.info(f"Statuspage incident created: {response_data}")
-        return StatusResponse(**simplified_response).dict()
+        
+        # Return simplified response
+        creation_response = StatuspageCreationResponse(
+            incident_id=str(incident_data.id),
+            so_number=incident_data.so_number,
+            statuspage_incident_id=statuspage_incident_id
+        )
+        
+        logging.info(f"Statuspage incident created succesfully with and id of {statuspage_incident_id}")
+        return creation_response
     
     except httpx.RequestError as e:
         logging.error(f"Network error creating statuspage incident: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Network error: {str(e)}")
+    except ValidationError as e:
+        logging.error(f"Validation error: {str(e)}")
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logging.error(f"Failed to create statuspage incident: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -214,5 +223,4 @@ async def update_statuspage_incident_status(
  
     
     
-
 
