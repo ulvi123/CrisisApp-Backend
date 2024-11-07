@@ -1,10 +1,18 @@
 from .database import Base
 from datetime import datetime
-from sqlalchemy import Column,Integer,String,Boolean,DateTime # type: ignore
-from sqlalchemy.ext.declarative import declarative_base # type: ignore
-from sqlalchemy.dialects.postgresql import ARRAY # type: ignore
+from sqlalchemy import Column,Integer,String,Boolean,DateTime
+from sqlalchemy.ext.declarative import declarative_base 
+from sqlalchemy.dialects.postgresql import ARRAY 
+from sqlalchemy import Column, Enum as SQLAlchemyEnum
+from enum import Enum
 
 Base = declarative_base()
+
+
+
+class UserRole(str,Enum):
+    USER = "USER"
+    SUPPORT = "SUPPORT"
 
 
 class Incident(Base):
@@ -38,7 +46,8 @@ class UserToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(250),unique=True, index=True, nullable=False)
     encrypted_token = Column(String(250), index=True, nullable=False)
-    role = Column(String(250), index=True)
+    role = Column(SQLAlchemyEnum(UserRole), default=UserRole.USER,nullable=True,index=True) 
     created_at = Column(DateTime, nullable=True, default=datetime.now())    
+  
   
   

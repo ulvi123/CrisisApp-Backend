@@ -17,6 +17,7 @@ from src.utils import (
     update_modal_view
 )
 from src.helperFunctions.status_page import create_statuspage_incident,update_statuspage_incident_status
+from src.helperFunctions.team_channel_mapping_to_slack import get_slack_channel_id_for_team
 from starlette.responses import JSONResponse
 from config import get_settings, Settings
 from src.helperFunctions.opsgenie import create_alert
@@ -458,7 +459,7 @@ async def slack_interactions(
             db.commit()
             db.refresh(db_incident)
             
-            # Slack channel creation and message
+            # Step1 - Slack channel creation and message
             try:
                 channel_name = f"incident-{db_incident.so_number}".lower()
                 channel_id = await create_slack_channel(channel_name)
@@ -484,7 +485,7 @@ async def slack_interactions(
                 await post_message_to_slack(channel_id, incident_message)
                 logger.info(f"Posted message to incident channel {channel_name}")
                 
-                # Posting message to general outages channel
+                # Step2 - Posting message to general outages channel
                 general_outages_message = (
                     f"\U0001F6A8 *New Incident Created* \U0001F6A8\n\n"
                     f"Incident Summary\n"
@@ -505,7 +506,37 @@ async def slack_interactions(
                     settings.SLACK_GENERAL_OUTAGES_CHANNEL, general_outages_message
                 )
                 logger.info("Posted message to general outages channel")
-
+                
+                
+                #step3 -posting message to team slack channel
+                
+                if isinstance(db_incident.suspected_owning_team, list) and len(db_incident.suspected_owning_team) > 0:
+                    team_name = db_incident.suspected_owning_team[0]
+                    logger.debug(f"Original Team name: {team_name}")
+                    team_channel_id = get_slack_channel_id_for_team(team_name)
+                    logger.debug(f"Found channel ID: {team_channel_id}")
+                        
+                    if team_channel_id:
+                        incident_message = (
+                                f"\U0001F6A8 *New Incident Created* \U0001F6A8\n\n"
+                                f"Incident Summary\n"
+                                f"------------------------\n"
+                                f"SO Number: {db_incident.so_number}\n"
+                                f"Severity: {db_incident.severity}\n"
+                                f"Affected Products: {', '.join(db_incident.affected_products)}\n"
+                                f"Customer Impact: {'Yes' if db_incident.p1_customer_affected else 'No'}\n"
+                                f"Suspected Owning Team: {db_incident.suspected_owning_team}\n\n"
+                                f"*Time Details:*\n"
+                                f"------------------------\n"
+                                f"Start Time: {db_incident.start_time}\n"
+                                f"*Additional Information:*\n"
+                                f"----------------------------------\n"
+                                f"Join the discussion in the newly created incident channel: <#{channel_id}>"
+                            )
+                        
+                        await post_message_to_slack(team_channel_id, incident_message)
+                        logger.info(f"Posted message to {team_name} team channel")
+    
             except SlackApiError as slack_error:
                 logger.error(f"Slack API error: {slack_error.response['error']}", exc_info=True)
                 raise HTTPException(

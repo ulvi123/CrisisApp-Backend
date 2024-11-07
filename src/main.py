@@ -25,6 +25,7 @@ from fastapi import HTTPException, status,Depends
 app = FastAPI()
 app.include_router(incident.router)
 
+
 settings = get_settings()
 encryption_key= settings.ENCRYPTION_KEY
 cipher = Fernet(encryption_key.encode())
