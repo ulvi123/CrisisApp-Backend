@@ -14,8 +14,6 @@ async def get_jira_auth():
     return base_64_auth
 
 
-
-
 async def create_jira_ticket(incident: schemas.IncidentCreate):
     # First, let's check the latest SO number in Jira
     jira_search_url = f"{settings.jira_server}/rest/api/2/search"

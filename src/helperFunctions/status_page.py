@@ -125,9 +125,7 @@ async def create_statuspage_incident(incident_data,settings,db: Session = Depend
     except Exception as e:
         logging.error(f"Failed to create statuspage incident: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-    
-    
+       
 #Update statuspage incident status   
 async def update_statuspage_incident_status(
     db_incident, 
@@ -182,7 +180,7 @@ async def update_statuspage_incident_status(
                 f"{settings.statuspage_url}/{settings.statuspage_page_id}/incidents/{db_incident.statuspage_incident_id}",
                 headers=headers,
                 json=update_payload,
-                timeout=10
+                timeout=30
             )
         if response.status_code != 200:
             error_message = f"Failed to update statuspage incident: Status {response.status_code}"
@@ -198,9 +196,9 @@ async def update_statuspage_incident_status(
                 detail="Failed to update statuspage incident"
             )
         
-        response_data = response.json()
-        logging.info(f"Statuspage incident updated: {response_data}")
-        return response_data
+        data = response.json()
+        logging.info(f"Statuspage incident updated: {data}")
+        return data
     
     except httpx.RequestError as e:
         error_message = f"Network error updating statuspage incident: {str(e)}"
