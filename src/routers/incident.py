@@ -195,38 +195,6 @@ async def handling_slash_commands(
                 status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
             ) from e
 
-        # try:
-        #     slack_response = requests.post(
-        #         "https://slack.com/api/views.open",
-        #         headers=headers,
-        #         json=payload,
-        #         timeout=2,
-        #     )
-        #     slack_response.raise_for_status()  # Raise an exception for HTTP errors
-        #     slack_response_data = slack_response.json()  # Parse JSON response
-
-        # except requests.exceptions.RequestException as e:
-        #     raise HTTPException(
-        #         status_code=400, detail=f"Failed to open the form: {str(e)}"
-        #     ) from e
-        # except json.JSONDecodeError as e:
-        #     raise HTTPException(
-        #         status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
-        #     ) from e
-
-        # if not slack_response_data.get("ok"):
-        #     raise HTTPException(
-        #         status_code=400, detail=f"Slack API error: {slack_response_data}"
-        #     )
-
-        # return JSONResponse(
-            status_code=200,
-            content={
-                "response_type": "ephemeral",
-                "text": "Incident form opening executed successfully in the fastapi Backend",
-            },
-        # )
-
     #slack command to update the incident status in statuspage-logic below
     elif command == "/update-incident":
         logger.info("Handling the incident update command")
@@ -273,13 +241,6 @@ async def handling_slash_commands(
                 "text": "Incident update form has been opened successfully.",
             },
         )
-
-
-
-
-
-
-
 
          
 #Route logic to create an incident
