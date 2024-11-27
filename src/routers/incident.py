@@ -18,6 +18,7 @@ from src.utils import (
 )
 from src.helperFunctions.status_page import create_statuspage_incident,update_statuspage_incident_status
 from src.helperFunctions.team_channel_mapping_to_slack import get_slack_channel_id_for_team
+from src.helperFunctions.generate_next_so_number import generate_next_so_number
 from starlette.responses import JSONResponse
 from config import get_settings, Settings
 from src.helperFunctions.opsgenie import create_alert
@@ -26,6 +27,7 @@ from src.helperFunctions.slack_utils import post_message_to_slack, create_slack_
 from urllib.parse import parse_qs
 from pydantic import ValidationError
 from slack_sdk.errors import SlackApiError
+import httpx
 
 
 
@@ -57,6 +59,7 @@ async def handling_slash_commands(
     x_slack_request_timestamp: str = Header(None),
     x_slack_signature: str = Header(None),
     settings: Settings = Depends(get_settings),
+    db: Session = Depends(get_db),
 ):
 
     headers = request.headers
@@ -147,27 +150,43 @@ async def handling_slash_commands(
             },
         )
      
+     
     # Open the incident form
     elif command == "/create-incident":
+        suggested_so_number =generate_next_so_number(db)
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {settings.SLACK_BOT_TOKEN}",
         }
-        modal_view = await create_modal_view(callback_id="incident_form")
+        modal_view = await create_modal_view(callback_id="incident_form",suggested_so_number=suggested_so_number)
         payload = {"trigger_id": trigger_id, "view": modal_view}
-        logger.debug(json.dumps(payload, indent=2))
-
+        logger.debug(json.dumps(payload, indent=2,default=str))
+        
         try:
-            slack_response = requests.post(
-                "https://slack.com/api/views.open",
-                headers=headers,
-                json=payload,
-                timeout=2,
-            )
-            slack_response.raise_for_status()  # Raise an exception for HTTP errors
-            slack_response_data = slack_response.json()  # Parse JSON response
+            async with httpx.AsyncClient() as client:
+                slack_response = await client.post(
+                    "https://slack.com/api/views.open",
+                    headers=headers,
+                    json=payload,
+                    timeout=2,
+                )
+                slack_response.raise_for_status()  # Raise an exception for HTTP errors
+                slack_response_data = slack_response.json()  # Parse JSON response
 
-        except requests.exceptions.RequestException as e:
+            if not slack_response_data.get("ok"):
+                raise HTTPException(
+                    status_code=400, detail=f"Slack API error: {slack_response_data}"
+                )
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "response_type": "ephemeral",
+                    "text": "Incident form opening executed successfully in the FastAPI Backend",
+                },
+            )
+
+        except httpx.RequestError as e:
             raise HTTPException(
                 status_code=400, detail=f"Failed to open the form: {str(e)}"
             ) from e
@@ -176,18 +195,37 @@ async def handling_slash_commands(
                 status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
             ) from e
 
-        if not slack_response_data.get("ok"):
-            raise HTTPException(
-                status_code=400, detail=f"Slack API error: {slack_response_data}"
-            )
+        # try:
+        #     slack_response = requests.post(
+        #         "https://slack.com/api/views.open",
+        #         headers=headers,
+        #         json=payload,
+        #         timeout=2,
+        #     )
+        #     slack_response.raise_for_status()  # Raise an exception for HTTP errors
+        #     slack_response_data = slack_response.json()  # Parse JSON response
 
-        return JSONResponse(
+        # except requests.exceptions.RequestException as e:
+        #     raise HTTPException(
+        #         status_code=400, detail=f"Failed to open the form: {str(e)}"
+        #     ) from e
+        # except json.JSONDecodeError as e:
+        #     raise HTTPException(
+        #         status_code=400, detail=f"Failed to parse Slack response: {str(e)}"
+        #     ) from e
+
+        # if not slack_response_data.get("ok"):
+        #     raise HTTPException(
+        #         status_code=400, detail=f"Slack API error: {slack_response_data}"
+        #     )
+
+        # return JSONResponse(
             status_code=200,
             content={
                 "response_type": "ephemeral",
                 "text": "Incident form opening executed successfully in the fastapi Backend",
             },
-        )
+        # )
 
     #slack command to update the incident status in statuspage-logic below
     elif command == "/update-incident":
@@ -235,6 +273,14 @@ async def handling_slash_commands(
                 "text": "Incident update form has been opened successfully.",
             },
         )
+
+
+
+
+
+
+
+
          
 #Route logic to create an incident
 @router.post("/slack/interactions", status_code=status.HTTP_201_CREATED,response_model=schemas.IncidentResponse)    
@@ -295,7 +341,6 @@ async def slack_interactions(
         #Alternative verison for optimized response
         if callback_id == "incident_form":
             background_tasks = BackgroundTasks()
-            
             try:
                 state_values = payload.get("view",{}).get("state", {}).get("values", {})
                 logger.debug("State values: %s", json.dumps(state_values, indent=2))
@@ -575,6 +620,7 @@ def extract_checkbox(state_values, key, value=None):
 async def process_incident_creation(incident_data: dict, trigger_id: str, settings: Settings, db: Session):
     logger.info("Starting incident creation process")
     try:
+        
         # Create Jira ticket
         incident = schemas.IncidentCreate(**incident_data)
         issue = await create_jira_ticket(incident)

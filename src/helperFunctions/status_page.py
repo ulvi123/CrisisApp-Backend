@@ -180,7 +180,7 @@ async def update_statuspage_incident_status(
                 f"{settings.statuspage_url}/{settings.statuspage_page_id}/incidents/{db_incident.statuspage_incident_id}",
                 headers=headers,
                 json=update_payload,
-                timeout=30
+                timeout=60
             )
         if response.status_code != 200:
             error_message = f"Failed to update statuspage incident: Status {response.status_code}"

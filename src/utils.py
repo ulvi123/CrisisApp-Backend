@@ -77,7 +77,7 @@ async def slack_challenge_parameter_verification(request: Request):
         return {"challenge": body.get("challenge")}
 
 
-async def create_modal_view(callback_id: str) -> dict:
+async def create_modal_view(callback_id: str, suggested_so_number:str) -> dict:
     return {
         "type": "modal",
         "callback_id": "incident_form",
@@ -102,6 +102,7 @@ async def create_modal_view(callback_id: str) -> dict:
                     "type": "plain_text_input",
                     "action_id": "so_number_action",
                     "placeholder": {"type": "plain_text", "text": "Enter the SO Number (e.g., SO-1245)"},
+                    "initial_value": suggested_so_number
                 },
             },
             {
@@ -316,6 +317,7 @@ async def get_modal_view(callback_id: str) -> dict:
 # def get_incident_details_modal(db_incident):
 
 def get_incident_details_modal(db_incident):
+    
     return {
         "type": "modal",
         "title": {"type": "plain_text", "text": "Incident Details"},
