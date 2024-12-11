@@ -1,0 +1,8 @@
+{
+  "body": "command=/create-incident&trigger_id=123.456&token=test_token",
+  "headers": {
+    "x-slack-signature": "v0=test",
+    "x-slack-request-timestamp": "1234567890",
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+}

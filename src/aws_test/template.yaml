@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  SlackCommandsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: commands.handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          SLACK_BOT_TOKEN: "test_token"
+          SLACK_VERIFICATION_TOKEN: "test_token"

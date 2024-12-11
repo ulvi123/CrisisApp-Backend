@@ -514,6 +514,11 @@ async def slack_interactions(
 
 
 
+
+
+
+
+#functions to be used in the router
 def extract_incident_data(state_values):
     required_fields = ["start_time", "start_time_picker", "end_time", "end_time_picker", "so_number", "affected_products", "suspected_owning_team", "severity"]
     
