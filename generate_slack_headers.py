@@ -25,12 +25,14 @@ form_data = {
 }
 
 # URL-encode the form data
-request_body = urllib.parse.urlencode(form_data)
+request_body = urllib.parse.urlencode(
+    form_data
+)
 
-# Your Slack Signing Secret
+
 SLACK_SIGNING_SECRET = settings.SLACK_SIGNING_SECRET
 
-# Current timestamp
+
 timestamp = str(int(time.time()))
 
 
@@ -51,14 +53,14 @@ headers = {
     "Content-Type": "application/x-www-form-urlencoded",
 }
 
-# response = requests.post(
-#     "https://8825-85-253-101-83.ngrok-free.app/slack/commands",
-#     headers=headers,
-#     data=request_body,
-# )
+response = requests.post(
+    "https://8825-85-253-101-83.ngrok-free.app/slack/commands",
+    headers=headers,
+    data=request_body,
+)
 
-# print("Status Code:", response.status_code)
-# print("Response Body:", response.text)
+print("Status Code:", response.status_code)
+print("Response Body:", response.text)
 
 print("x_slack_request_timestamp", timestamp)
 print("x_slack_signature", my_signature)

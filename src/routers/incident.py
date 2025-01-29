@@ -583,6 +583,7 @@ def extract_checkbox(state_values, key, value=None):
     options = state_values.get(key, {}).get(f"{key}_action", {}).get("selected_options", [])
     return any(option.get("value") == (value or key) for option in options)
     
+#creating incident 
 async def process_incident_creation(incident_data: dict, trigger_id: str, settings: Settings, db: Session):
     logger.info("Starting incident creation process")
     try:
@@ -667,7 +668,7 @@ async def process_incident_creation(incident_data: dict, trigger_id: str, settin
         #Create OpsGenie alert
         try:
             opsgenie_response = await create_alert(db_incident)
-            if opsgenie_response["status_code"] == 201:
+            if opsgenie_response.get("status_code") in [201, 202]:  # OpsGenie uses 202 for successful alert creation
                 logger.info(f"OpsGenie alert created with ID: {opsgenie_response.json()['id']}")
             else:
                 logger.error("Failed to create OpsGenie alert")

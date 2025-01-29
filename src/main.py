@@ -11,13 +11,26 @@ import logging
 from fastapi.logger import logger as fastapi_logger
 import httpx
 from src.models import UserToken
+from src import schemas
 from src.database import get_db
 from src.utils import encrypt_token
 from .database import get_db,SessionLocal
 from cryptography.fernet import Fernet
 import asyncio
 from fastapi import HTTPException, status,Depends
+import json
 
+#Logging configuration
+schemas.IncidentResponse.Config()
+logging.basicConfig(
+    level=logging.INFO,  # Set the level to DEBUG for more verbosity
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),  # Outputs logs to the console
+        logging.FileHandler("app.log")  # Optionally log to a file
+    ]
+)
+logger = logging.getLogger(__name__)
 
 
 
@@ -31,10 +44,48 @@ encryption_key= settings.ENCRYPTION_KEY
 cipher = Fernet(encryption_key.encode())
 
 
+# async def fetch_and_save_teams():
+#     url = "https://api.opsgenie.com/v2/teams"
+#     headers = {
+#         "Authorization": f"GenieKey {settings.opsgenie_api_key}",
+#         "Content-Type": "application/json"
+#     }
+#     logger.info(f"API Key: {settings.opsgenie_api_key}")
+    
+#     try:
+#         logger.info("Fetching teams from OpsGenie API")
+#         async with httpx.AsyncClient() as client:  # Using httpx for async requests
+#             response = await client.get(url, headers=headers)
+#             response.raise_for_status()
+            
+#             teams_data = response.json().get('data', [])
+#             teams = {team['name']: team['id'] for team in teams_data}
+            
+#             # Save to options.json
+#             options = {
+#                 "responders": teams
+#             }
+            
+#             with open('options.json', 'w') as f:
+#                 json.dump(options, f, indent=2)
+                
+#             logger.info("Teams data saved to options.json")
+#             return teams
+#     except httpx.HTTPError as e:
+#         error_message = f"Failed to fetch teams: {str(e)}"
+#         logger.error(error_message)
+#         logger.error(f"Response content: {getattr(e.response, 'text', 'No response content')}")
+#         raise HTTPException(status_code=500, detail=error_message)
+
+
 
 @app.on_event("startup")
 async def startup_event():
     await initialize_options()
+    # Fetch and save teams
+    # await fetch_and_save_teams()
+    # logging.info("Teams data successfully fetched and saved to options.json")
+    
 
 @app.get("/")
 async def root():

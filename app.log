@@ -260,3 +260,164 @@ UnboundLocalError: cannot access local variable 'incident' where it is not assoc
 2024-12-02 12:34:33,991 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
 2024-12-02 13:06:01,322 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
 2024-12-02 13:14:03,599 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-23 11:48:33,455 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 11:54:02,064 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 11:56:42,291 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 11:58:37,085 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:04:30,663 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:15:31,255 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:20:32,284 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:22:01,088 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:34:37,815 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:38:09,854 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:43:15,784 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:44:55,784 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:46:19,637 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:46:37,525 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:48:33,753 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 12:50:25,138 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 18:35:52,242 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 18:39:22,427 [ERROR] src.routers.incident: Error verifying request: 400: Invalid request signature is detected
+2025-01-23 18:43:57,675 [ERROR] src.routers.incident: Invalid token
+2025-01-23 18:48:20,590 [INFO] src.routers.incident: Handling /get-incident command
+2025-01-23 18:48:20,875 [ERROR] src.routers.incident: Slack API error: {'ok': False, 'error': 'invalid_auth', 'warning': 'missing_charset', 'response_metadata': {'warnings': ['missing_charset']}}
+2025-01-23 18:54:08,297 [INFO] src.routers.incident: Handling /get-incident command
+2025-01-23 18:54:21,862 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-29 14:00:49,531 [INFO] src.helperFunctions.opsgenie: Fetching teams from OpsGenie API
+2025-01-29 14:00:49,952 [ERROR] src.helperFunctions.opsgenie: Failed to fetch teams: 403 Client Error: Forbidden for url: https://api.opsgenie.com/v2/teams
+2025-01-29 14:02:53,187 [INFO] src.helperFunctions.opsgenie: Fetching teams from OpsGenie API
+2025-01-29 14:02:53,589 [ERROR] src.helperFunctions.opsgenie: Failed to fetch teams: 403 Client Error: Forbidden for url: https://api.opsgenie.com/v2/teams
+2025-01-29 14:05:55,339 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:05:55,767 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:05:55,768 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:05:55,768 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.0,"requestId":"c2081487-5eab-4c81-b806-ba0c87218ff7"}
+2025-01-29 14:06:52,510 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:06:52,926 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:06:52,927 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:06:52,927 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.001,"requestId":"fc45d1cd-6bc4-42ff-a274-448524f27f8c"}
+2025-01-29 14:09:24,973 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:09:25,400 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:09:25,401 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:09:25,401 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.0,"requestId":"08c33e28-44d0-4f79-8f78-1e1183aab2e9"}
+2025-01-29 14:09:48,545 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:09:48,545 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:09:48,958 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:09:48,959 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:09:48,959 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.001,"requestId":"dc0e328f-6689-45ea-994d-79c59d029f67"}
+2025-01-29 14:34:33,266 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:34:33,266 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:34:33,420 [INFO] httpx: HTTP Request: GET https://api.eu.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:34:33,421 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.eu.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:34:33,421 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.001,"requestId":"d8ad85f4-965e-4569-b88e-9ddaa4c0c0cb"}
+2025-01-29 14:34:53,958 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:34:53,958 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:34:54,080 [INFO] httpx: HTTP Request: GET https://api.eu.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:34:54,081 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.eu.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:34:54,081 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.0,"requestId":"d180fa03-619f-4789-91db-f4170c0d5320"}
+2025-01-29 14:36:12,132 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:36:12,132 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:36:13,188 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:36:13,189 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:36:13,189 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.001,"requestId":"e43fff9c-4ed9-4a65-b30e-a93b89189e9d"}
+2025-01-29 14:41:03,436 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:41:03,436 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:41:03,878 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:41:03,879 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:41:03,879 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.001,"requestId":"5824212f-1e36-4b44-9bb9-efc3522c3d63"}
+2025-01-29 14:42:31,479 [INFO] src.main: API Key: 9a14b246-19ba-4074-a416-56e3acbe519c
+2025-01-29 14:42:31,480 [INFO] src.main: Fetching teams from OpsGenie API
+2025-01-29 14:42:31,915 [INFO] httpx: HTTP Request: GET https://api.opsgenie.com/v2/teams "HTTP/1.1 403 Forbidden"
+2025-01-29 14:42:31,916 [ERROR] src.main: Failed to fetch teams: Client error '403 Forbidden' for url 'https://api.opsgenie.com/v2/teams'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+2025-01-29 14:42:31,916 [ERROR] src.main: Response content: {"code":40301,"message":"Team API Keys are not authorized to perform this action.","took":0.0,"requestId":"79befbb5-4711-49fe-9a42-fa8ce29dac4f"}
+2025-01-29 15:34:40,410 [INFO] src.routers.incident: Handling /get-incident command
+2025-01-29 15:35:00,597 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-29 15:37:08,590 [INFO] src.routers.incident: Starting incident creation process
+2025-01-29 15:37:11,173 [INFO] src.helperFunctions.slack_utils: Successfully opened success modal in slack
+2025-01-29 15:37:13,223 [INFO] src.helperFunctions.slack_utils: Slack API response in create_slack_channel: {'ok': True, 'channel': {'id': 'C08AQSSVAVB', 'name': 'incident-so-1697-1738157832', 'is_channel': True, 'is_group': False, 'is_im': False, 'is_mpim': False, 'is_private': False, 'created': 1738157832, 'is_archived': False, 'is_general': False, 'unlinked': 0, 'name_normalized': 'incident-so-1697-1738157832', 'is_shared': False, 'is_org_shared': False, 'is_pending_ext_shared': False, 'pending_shared': [], 'context_team_id': 'T3GD0HY3H', 'updated': 1738157832925, 'parent_conversation': None, 'creator': 'U06PWQY0ZND', 'is_ext_shared': False, 'shared_team_ids': ['T3GD0HY3H'], 'pending_connected_team_ids': [], 'is_member': True, 'last_read': '0000000000.000000', 'topic': {'value': '', 'creator': '', 'last_set': 0}, 'purpose': {'value': '', 'creator': '', 'last_set': 0}, 'previous_names': [], 'priority': 0}}
+2025-01-29 15:37:13,224 [INFO] src.helperFunctions.slack_utils: Channel created successfully. Channel ID: C08AQSSVAVB
+2025-01-29 15:37:13,473 [INFO] src.helperFunctions.slack_utils: Bot enabled to join the channel: C08AQSSVAVB
+2025-01-29 15:37:15,780 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C08AQSSVAVB
+2025-01-29 15:37:15,780 [INFO] src.routers.incident: Posted message to incident channel incident-so-1697
+2025-01-29 15:37:16,213 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C07GL77APRS
+2025-01-29 15:37:16,213 [INFO] src.routers.incident: Posted message to general outages channel
+2025-01-29 15:37:16,519 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID CFB5BC1PT
+2025-01-29 15:37:16,519 [INFO] src.routers.incident: Posted message to Play by Play Aggregation team channel
+2025-01-29 15:37:17,069 [INFO] httpx: HTTP Request: POST https://api.statuspage.io/v1/pages/x0c3bgkzj0yw/incidents "HTTP/1.1 201 Created"
+2025-01-29 15:37:17,070 [INFO] root: Statuspage response: 201 - {"id":"8wgq8zyrqbpd","components":[{"id":"jmq3t1734kz6","page_id":"x0c3bgkzj0yw","group_id":null,"created_at":"2024-10-18T08:52:40Z","updated_at":"2025-01-29T13:37:16Z","group":false,"name":"API integraiton","description":"Incident managament application","position":3,"status":"degraded_performance","showcase":true,"only_show_if_degraded":false,"automation_email":"component+9d11164f9dab4617af9ee72f9832dedf@notifications.statuspage.io","start_date":"2024-10-18"}],"created_at":"2025-01-29T13:37:16Z","impact":"minor","impact_override":null,"incident_updates":[{"id":"z6vwp51hk371","incident_id":"8wgq8zyrqbpd","affected_components":[{"code":"jmq3t1734kz6","name":"API integraiton","old_status":"operational","new_status":"degraded_performance"}],"body":"*Incident Summary:*\n----------------------------------\n*SO Number:* SO-1697\n*Severity Level:* None\n*Affected Products:* Telemetry\n*Suspected Teams:* Play by Play Aggregation\n*Start Time:* 2025-01-02 01:00:00\n*Affected Components:* \n\n*Additional Details:*\n----------------------------------\n*Description:* Not an incident.Testing of an automation tool\n*Message:* Not an incident.Testing of an automation tool\n*Customer Affected:* Yes","created_at":"2025-01-29T13:37:16.869Z","custom_tweet":null,"deliver_notifications":true,"display_at":"2025-01-29T13:37:16.869Z","status":"investigating","tweet_id":null,"twitter_updated_at":null,"updated_at":"2025-01-29T13:37:16.869Z","wants_twitter_update":false}],"metadata":{},"monitoring_at":null,"name":"🚨 Incident Report: SO-1697 🚨","page_id":"x0c3bgkzj0yw","postmortem_body":null,"postmortem_body_last_updated_at":null,"postmortem_ignored":false,"postmortem_notified_subscribers":false,"postmortem_notified_twitter":false,"postmortem_published_at":null,"resolved_at":null,"scheduled_auto_completed":false,"scheduled_auto_in_progress":false,"scheduled_for":null,"auto_transition_deliver_notifications_at_end":null,"auto_transition_deliver_notifications_at_start":null,"auto_transition_to_maintenance_state":null,"auto_transition_to_operational_state":null,"scheduled_remind_prior":false,"scheduled_reminded_at":null,"scheduled_until":null,"shortlink":"https://stspg.io/wv08wsr8m00m","status":"investigating","updated_at":"2025-01-29T13:37:16Z","reminder_intervals":null}
+2025-01-29 15:37:17,079 [INFO] root: Statuspage incident created succesfully with and id of 8wgq8zyrqbpd
+2025-01-29 15:37:17,080 [ERROR] src.routers.incident: Unexpected error creating Statuspage incident for SO SO-1697: 'StatuspageCreationResponse' object has no attribute 'get'
+2025-01-29 15:37:17,082 [ERROR] src.routers.incident: Error creating OpsGenie alert: unhashable type: 'list'
+2025-01-29 15:37:17,082 [INFO] src.routers.incident: Incident creation process completed
+2025-01-29 19:10:18,662 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-29 19:11:13,386 [INFO] src.routers.incident: Starting incident creation process
+2025-01-29 19:11:15,839 [INFO] src.helperFunctions.slack_utils: Successfully opened success modal in slack
+2025-01-29 19:11:17,857 [INFO] src.helperFunctions.slack_utils: Slack API response in create_slack_channel: {'ok': True, 'channel': {'id': 'C08AS9ND5NH', 'name': 'incident-so-1698-1738170677', 'is_channel': True, 'is_group': False, 'is_im': False, 'is_mpim': False, 'is_private': False, 'created': 1738170677, 'is_archived': False, 'is_general': False, 'unlinked': 0, 'name_normalized': 'incident-so-1698-1738170677', 'is_shared': False, 'is_org_shared': False, 'is_pending_ext_shared': False, 'pending_shared': [], 'context_team_id': 'T3GD0HY3H', 'updated': 1738170677578, 'parent_conversation': None, 'creator': 'U06PWQY0ZND', 'is_ext_shared': False, 'shared_team_ids': ['T3GD0HY3H'], 'pending_connected_team_ids': [], 'is_member': True, 'last_read': '0000000000.000000', 'topic': {'value': '', 'creator': '', 'last_set': 0}, 'purpose': {'value': '', 'creator': '', 'last_set': 0}, 'previous_names': [], 'priority': 0}}
+2025-01-29 19:11:17,857 [INFO] src.helperFunctions.slack_utils: Channel created successfully. Channel ID: C08AS9ND5NH
+2025-01-29 19:11:18,089 [INFO] src.helperFunctions.slack_utils: Bot enabled to join the channel: C08AS9ND5NH
+2025-01-29 19:11:20,426 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C08AS9ND5NH
+2025-01-29 19:11:20,440 [INFO] src.routers.incident: Posted message to incident channel incident-so-1698
+2025-01-29 19:11:20,826 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C07GL77APRS
+2025-01-29 19:11:20,826 [INFO] src.routers.incident: Posted message to general outages channel
+2025-01-29 19:11:21,188 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID CFB5BC1PT
+2025-01-29 19:11:21,190 [INFO] src.routers.incident: Posted message to Play by Play Aggregation team channel
+2025-01-29 19:11:21,809 [INFO] httpx: HTTP Request: POST https://api.statuspage.io/v1/pages/x0c3bgkzj0yw/incidents "HTTP/1.1 201 Created"
+2025-01-29 19:11:21,810 [INFO] root: Statuspage response: 201 - {"id":"ydqg8rr4g4w6","components":[{"id":"jmq3t1734kz6","page_id":"x0c3bgkzj0yw","group_id":null,"created_at":"2024-10-18T08:52:40Z","updated_at":"2025-01-29T13:37:16Z","group":false,"name":"API integraiton","description":"Incident managament application","position":3,"status":"degraded_performance","showcase":true,"only_show_if_degraded":false,"automation_email":"component+9d11164f9dab4617af9ee72f9832dedf@notifications.statuspage.io","start_date":"2024-10-18"}],"created_at":"2025-01-29T17:11:21Z","impact":"minor","impact_override":null,"incident_updates":[{"id":"lj14y31svr4z","incident_id":"ydqg8rr4g4w6","affected_components":[{"code":"jmq3t1734kz6","name":"API integraiton","old_status":"degraded_performance","new_status":"degraded_performance"}],"body":"*Incident Summary:*\n----------------------------------\n*SO Number:* SO-1698\n*Severity Level:* None\n*Affected Products:* Virtuals Product\n*Suspected Teams:* Play by Play Aggregation\n*Start Time:* 2025-01-03 01:00:00\n*Affected Components:* \n\n*Additional Details:*\n----------------------------------\n*Description:* Not an actual incident\n*Message:* Not an actual incident\n*Customer Affected:* Yes","created_at":"2025-01-29T17:11:21.649Z","custom_tweet":null,"deliver_notifications":true,"display_at":"2025-01-29T17:11:21.649Z","status":"investigating","tweet_id":null,"twitter_updated_at":null,"updated_at":"2025-01-29T17:11:21.649Z","wants_twitter_update":false}],"metadata":{},"monitoring_at":null,"name":"🚨 Incident Report: SO-1698 🚨","page_id":"x0c3bgkzj0yw","postmortem_body":null,"postmortem_body_last_updated_at":null,"postmortem_ignored":false,"postmortem_notified_subscribers":false,"postmortem_notified_twitter":false,"postmortem_published_at":null,"resolved_at":null,"scheduled_auto_completed":false,"scheduled_auto_in_progress":false,"scheduled_for":null,"auto_transition_deliver_notifications_at_end":null,"auto_transition_deliver_notifications_at_start":null,"auto_transition_to_maintenance_state":null,"auto_transition_to_operational_state":null,"scheduled_remind_prior":false,"scheduled_reminded_at":null,"scheduled_until":null,"shortlink":"https://stspg.io/b87rh2rhnv1b","status":"investigating","updated_at":"2025-01-29T17:11:21Z","reminder_intervals":null}
+2025-01-29 19:11:21,816 [INFO] root: Statuspage incident created succesfully with and id of ydqg8rr4g4w6
+2025-01-29 19:11:21,816 [ERROR] src.routers.incident: Unexpected error creating Statuspage incident for SO SO-1698: 'StatuspageCreationResponse' object has no attribute 'get'
+2025-01-29 19:11:21,818 [INFO] src.helperFunctions.opsgenie: Responders Payload: [{'type': 'team', 'name': 'Play by Play Aggregation'}]
+2025-01-29 19:11:21,818 [INFO] src.helperFunctions.opsgenie: Creating OpsGenie alert for incident SO-1698
+2025-01-29 19:11:22,210 [ERROR] src.routers.incident: Failed to create OpsGenie alert
+2025-01-29 19:11:22,210 [INFO] src.routers.incident: Incident creation process completed
+2025-01-29 19:19:01,175 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-29 19:20:02,476 [INFO] src.routers.incident: Starting incident creation process
+2025-01-29 19:20:04,687 [INFO] src.helperFunctions.slack_utils: Successfully opened success modal in slack
+2025-01-29 19:20:06,599 [INFO] src.helperFunctions.slack_utils: Slack API response in create_slack_channel: {'ok': True, 'channel': {'id': 'C08AV67SRQS', 'name': 'incident-so-1699-1738171206', 'is_channel': True, 'is_group': False, 'is_im': False, 'is_mpim': False, 'is_private': False, 'created': 1738171206, 'is_archived': False, 'is_general': False, 'unlinked': 0, 'name_normalized': 'incident-so-1699-1738171206', 'is_shared': False, 'is_org_shared': False, 'is_pending_ext_shared': False, 'pending_shared': [], 'context_team_id': 'T3GD0HY3H', 'updated': 1738171206331, 'parent_conversation': None, 'creator': 'U06PWQY0ZND', 'is_ext_shared': False, 'shared_team_ids': ['T3GD0HY3H'], 'pending_connected_team_ids': [], 'is_member': True, 'last_read': '0000000000.000000', 'topic': {'value': '', 'creator': '', 'last_set': 0}, 'purpose': {'value': '', 'creator': '', 'last_set': 0}, 'previous_names': [], 'priority': 0}}
+2025-01-29 19:20:06,599 [INFO] src.helperFunctions.slack_utils: Channel created successfully. Channel ID: C08AV67SRQS
+2025-01-29 19:20:06,850 [INFO] src.helperFunctions.slack_utils: Bot enabled to join the channel: C08AV67SRQS
+2025-01-29 19:20:09,136 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C08AV67SRQS
+2025-01-29 19:20:09,137 [INFO] src.routers.incident: Posted message to incident channel incident-so-1699
+2025-01-29 19:20:09,411 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C07GL77APRS
+2025-01-29 19:20:09,412 [INFO] src.routers.incident: Posted message to general outages channel
+2025-01-29 19:20:09,762 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID CFB5BC1PT
+2025-01-29 19:20:09,762 [INFO] src.routers.incident: Posted message to Play by Play Aggregation team channel
+2025-01-29 19:20:10,270 [INFO] httpx: HTTP Request: POST https://api.statuspage.io/v1/pages/x0c3bgkzj0yw/incidents "HTTP/1.1 201 Created"
+2025-01-29 19:20:10,273 [INFO] root: Statuspage response: 201 - {"id":"wvwz3n6mv5tk","components":[{"id":"jmq3t1734kz6","page_id":"x0c3bgkzj0yw","group_id":null,"created_at":"2024-10-18T08:52:40Z","updated_at":"2025-01-29T13:37:16Z","group":false,"name":"API integraiton","description":"Incident managament application","position":3,"status":"degraded_performance","showcase":true,"only_show_if_degraded":false,"automation_email":"component+9d11164f9dab4617af9ee72f9832dedf@notifications.statuspage.io","start_date":"2024-10-18"}],"created_at":"2025-01-29T17:20:10Z","impact":"minor","impact_override":null,"incident_updates":[{"id":"m37c46bglsvy","incident_id":"wvwz3n6mv5tk","affected_components":[{"code":"jmq3t1734kz6","name":"API integraiton","old_status":"degraded_performance","new_status":"degraded_performance"}],"body":"*Incident Summary:*\n----------------------------------\n*SO Number:* SO-1699\n*Severity Level:* None\n*Affected Products:* Football Competition Manager\n*Suspected Teams:* Play by Play Aggregation\n*Start Time:* 2025-01-03 03:00:00\n*Affected Components:* \n\n*Additional Details:*\n----------------------------------\n*Description:* Not an actual incident\n*Message:* Not an actual incident\n*Customer Affected:* Yes","created_at":"2025-01-29T17:20:10.091Z","custom_tweet":null,"deliver_notifications":true,"display_at":"2025-01-29T17:20:10.091Z","status":"investigating","tweet_id":null,"twitter_updated_at":null,"updated_at":"2025-01-29T17:20:10.091Z","wants_twitter_update":false}],"metadata":{},"monitoring_at":null,"name":"🚨 Incident Report: SO-1699 🚨","page_id":"x0c3bgkzj0yw","postmortem_body":null,"postmortem_body_last_updated_at":null,"postmortem_ignored":false,"postmortem_notified_subscribers":false,"postmortem_notified_twitter":false,"postmortem_published_at":null,"resolved_at":null,"scheduled_auto_completed":false,"scheduled_auto_in_progress":false,"scheduled_for":null,"auto_transition_deliver_notifications_at_end":null,"auto_transition_deliver_notifications_at_start":null,"auto_transition_to_maintenance_state":null,"auto_transition_to_operational_state":null,"scheduled_remind_prior":false,"scheduled_reminded_at":null,"scheduled_until":null,"shortlink":"https://stspg.io/rggz2dx74hwl","status":"investigating","updated_at":"2025-01-29T17:20:10Z","reminder_intervals":null}
+2025-01-29 19:20:10,282 [INFO] root: Statuspage incident created succesfully with and id of wvwz3n6mv5tk
+2025-01-29 19:20:10,282 [ERROR] src.routers.incident: Unexpected error creating Statuspage incident for SO SO-1699: 'StatuspageCreationResponse' object has no attribute 'get'
+2025-01-29 19:20:10,291 [INFO] src.helperFunctions.opsgenie: Final Payload Being Sent to OpsGenie:
+2025-01-29 19:20:10,291 [INFO] src.helperFunctions.opsgenie: {
+  "message": "Service Outage Alert",
+  "description": "A new incident has been created regarding a service outage.\n\nDescription:\nNot an actual incident\nFor more details, you can check the Jira issue here: https://geniussports.atlassian.net/browse/SO-1699",
+  "priority": "P1",
+  "tags": [
+    "SOS"
+  ],
+  "responders": [
+    {
+      "type": "team",
+      "name": "Play by Play Aggregation"
+    }
+  ]
+}
+2025-01-29 19:20:10,291 [INFO] src.helperFunctions.opsgenie: Creating OpsGenie alert for incident SO-1699
+2025-01-29 19:20:10,698 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Status Code: 202
+2025-01-29 19:20:10,698 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Headers: {'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Date': 'Wed, 29 Jan 2025 17:20:10 GMT', 'X-Response-Time': '0.007', 'X-Ratelimit-State': 'OK', 'Og-Apigw-Request-Id': '5843affe-979b-4b58-9f2b-3c68db4fd1fb', 'Server': 'AtlassianEdge', 'X-Content-Type-Options': 'nosniff', 'X-Xss-Protection': '1; mode=block', 'Atl-Traceid': '9306312c66984c27ad208a099f40a418', 'Atl-Request-Id': '9306312c-6698-4c27-ad20-8a099f40a418', 'Strict-Transport-Security': 'max-age=63072000; preload', 'Report-To': '{"endpoints": [{"url": "https://dz8aopenkvv6s.cloudfront.net"}], "group": "endpoint-1", "include_subdomains": true, "max_age": 600}', 'Nel': '{"failure_fraction": 0.001, "include_subdomains": true, "max_age": 600, "report_to": "endpoint-1"}', 'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip', 'Server-Timing': 'atl-edge;dur=307,atl-edge-internal;dur=8,atl-edge-upstream;dur=299,atl-edge-pop;desc="aws-eu-central-1"', 'X-Cache': 'Miss from cloudfront', 'Via': '1.1 2a4d61538fbb384d64746e2642e5e74e.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'HEL50-C2', 'X-Amz-Cf-Id': 'vsj-ksDpt8RVO7KMZ47ouZjnai61hHfXV_4COQ3L4V3v3xto5WNX8w=='}
+2025-01-29 19:20:10,699 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Body: {"result":"Request will be processed","took":0.007,"requestId":"b7ae9241-ad88-4f07-a7f1-0ab8a5080e95"}
+2025-01-29 19:20:10,699 [INFO] src.helperFunctions.opsgenie: OpsGenie Response JSON: {
+  "result": "Request will be processed",
+  "took": 0.007,
+  "requestId": "b7ae9241-ad88-4f07-a7f1-0ab8a5080e95"
+}
+2025-01-29 19:20:10,701 [INFO] src.helperFunctions.opsgenie: Alert created successfully
+2025-01-29 19:20:10,702 [ERROR] src.routers.incident: Failed to create OpsGenie alert
+2025-01-29 19:20:10,702 [INFO] src.routers.incident: Incident creation process completed
+2025-01-29 20:14:41,445 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"

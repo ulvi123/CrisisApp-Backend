@@ -52,9 +52,17 @@ async def verify_slack_request(
         ).hexdigest()
     )
 
+    print("-------------------------------------")
+    print(f"Body: {body.decode()}")
+    print(f"Timestamp: {x_slack_request_timestamp}")
     print(f"Received signature: {x_slack_signature}")
-    print(f"Computed signature: {my_signature}")
     print(f"Sig base: {sig_base}")
+    print(f"Computed signature: {my_signature}")
+    print(f"X_SLACK_TIMETAMPS: {x_slack_request_timestamp}")
+    print(f"Signing Secret: {settings.SLACK_SIGNING_SECRET}")
+    print(f"Loaded Signing Secret: {settings.SLACK_SIGNING_SECRET}")
+    print("-------------------------------------")
+
 
     if not hmac.compare_digest(my_signature, x_slack_signature):
         print("Signature mismatch")

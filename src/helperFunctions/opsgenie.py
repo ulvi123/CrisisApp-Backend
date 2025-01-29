@@ -1,15 +1,77 @@
 import requests
 from config import settings
-from typing import Dict,Tuple
+from typing import Dict, Tuple
 from requests.exceptions import RequestException
 import logging
+import json
+from pathlib import Path
+from config import get_settings, Settings
 
 
 logger = logging.getLogger(__name__)
 
+settings = get_settings()
+
 
 class OpsGenieError(Exception):
     pass
+
+
+# version working with the api
+# def get_team_responder(incident, options_file: str = "options.json") -> list:
+#     """Get responder based on incident's suspected owning team"""
+#     try:
+#         with open(options_file) as f:
+#             options = json.load(f)
+#             teams = options.get('responders', {})
+
+#             # Check if incident's suspected team exists in our teams
+#             if incident.suspected_team in teams:
+#                 return [{
+#                     "type": "team",
+#                     "name": incident.suspected_team
+#                 }]
+#             else:
+#                 logger.warning(f"Team {incident.suspected_team} not found in options.json")
+#                 return []
+#     except FileNotFoundError:
+#         logger.error(f"Options file {options_file} not found")
+#         return []
+#     except json.JSONDecodeError:
+#         logger.error(f"Invalid JSON in {options_file}")
+#         return []
+
+
+# version working with mock api simulation
+MOCK_OPSGENIE_TEAMS = {"Play by Play Aggregation": "Play by Play Aggregation"}
+
+
+def get_team_responder(incident) -> list:
+    """Get responder based on incident's suspected owning team using mock OpsGenie data."""
+    if not incident.suspected_owning_team:
+        logger.warning("No suspected owning team provided")
+        return []
+
+    if isinstance(incident.suspected_owning_team, str):
+        team = incident.suspected_owning_team
+    elif isinstance(incident.suspected_owning_team, list):
+        if not incident.suspected_owning_team:
+            return []
+        team = incident.suspected_owning_team[0]
+    else:
+        logger.error(
+            f"Unexpected type for suspected_owning_team: {type(incident.suspected_owning_team)}")
+        return []
+
+    if team in MOCK_OPSGENIE_TEAMS:
+        return [{
+            "type": "team",
+            "name": MOCK_OPSGENIE_TEAMS[team]
+        }]
+    else:
+        logger.warning(f"Team {team} not found in OpsGenie mock data")
+        return []
+
 
 async def create_alert(incident) -> Dict:
     url = "https://api.opsgenie.com/v2/alerts"
@@ -17,7 +79,10 @@ async def create_alert(incident) -> Dict:
         "Authorization": f"GenieKey {settings.opsgenie_api_key}",
         "Content-Type": "application/json",
     }
-    # Updated Opsgenie payload with a more conversational style
+
+    tags = ["SOS"]
+    responders = get_team_responder(incident)
+
     payload = {
         "message": "Service Outage Alert",
         "description": (
@@ -27,23 +92,61 @@ async def create_alert(incident) -> Dict:
             f"For more details, you can check the Jira issue here: {settings.jira_server}/browse/{incident.jira_issue_key}"
         ),
         "priority": "P1",
+        "tags": tags,
+        "responders": responders
     }
-     
+
+    logger.info("Final Payload Being Sent to OpsGenie:")
+    logger.info(json.dumps(payload, indent=2))
+
     try:
-        logger.info(f"Creating OpsGenie alert for incident {incident.jira_issue_key}")
-        response = requests.post(url,json=payload,headers=headers)
-        response.raise_for_status()
-        return  {
-            "data": response.json(),
-            "status_code": response.status_code,
-            "message": "Alert created successfully"
-        }
-    except RequestException as e:
-        error_message = f"Failed to create alert: {str(e)}"
+        logger.info(
+            f"Creating OpsGenie alert for incident {incident.jira_issue_key}")
+        response = requests.post(url, json=payload, headers=headers)
+
+        # Log the complete response
+        logger.info(f"OpsGenie Response Status Code: {response.status_code}")
+        logger.info(f"OpsGenie Response Headers: {dict(response.headers)}")
+        logger.info(f"OpsGenie Response Body: {response.text}")
+
+        # Try to parse the response as JSON for more detailed error information
+        try:
+            response_data = response.json()
+            logger.info(
+                f"OpsGenie Response JSON: {json.dumps(response_data, indent=2)}")
+        except json.JSONDecodeError:
+            logger.warning("Could not parse OpsGenie response as JSON")
+
+        # Check if the request was successful
+        if response.status_code == 202:  # OpsGenie uses 202 for successful alert creation
+            logger.info("Alert created successfully")
+            return {
+                "data": response.json() if response.text else {},
+                "status_code": response.status_code,
+                "message": "Alert created successfully"
+            }
+        else:
+            error_message = f"OpsGenie returned status code {response.status_code}"
+            logger.error(error_message)
+            logger.error(f"Response content: {response.text}")
+            raise OpsGenieError(error_message)
+
+    except requests.exceptions.RequestException as e:
+        error_message = "Failed to create OpsGenie alert"
+        logger.error(error_message)
+
+        if hasattr(e, 'response') and e.response is not None:
+            logger.error(f"Error status code: {e.response.status_code}")
+            logger.error(f"Error response body: {e.response.text}")
+            try:
+                error_json = e.response.json()
+                logger.error(
+                    f"Error response JSON: {json.dumps(error_json, indent=2)}")
+            except json.JSONDecodeError:
+                logger.error("Could not parse error response as JSON")
+
+        raise OpsGenieError(f"{error_message}: {str(e)}") from e
+    except Exception as e:
+        error_message = f"Unexpected error creating OpsGenie alert: {str(e)}"
         logger.error(error_message)
         raise OpsGenieError(error_message) from e
-              
-       
-   
-   
-   
