@@ -421,3 +421,46 @@ For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/St
 2025-01-29 19:20:10,702 [ERROR] src.routers.incident: Failed to create OpsGenie alert
 2025-01-29 19:20:10,702 [INFO] src.routers.incident: Incident creation process completed
 2025-01-29 20:14:41,445 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-30 15:33:38,994 [INFO] httpx: HTTP Request: POST https://slack.com/api/views.open "HTTP/1.1 200 OK"
+2025-01-30 15:35:29,018 [INFO] src.routers.incident: Starting incident creation process
+2025-01-30 15:35:31,314 [INFO] src.helperFunctions.slack_utils: Successfully opened success modal in slack
+2025-01-30 15:35:33,324 [INFO] src.helperFunctions.slack_utils: Slack API response in create_slack_channel: {'ok': True, 'channel': {'id': 'C08AKKH310X', 'name': 'incident-so-1700-1738244132', 'is_channel': True, 'is_group': False, 'is_im': False, 'is_mpim': False, 'is_private': False, 'created': 1738244132, 'is_archived': False, 'is_general': False, 'unlinked': 0, 'name_normalized': 'incident-so-1700-1738244132', 'is_shared': False, 'is_org_shared': False, 'is_pending_ext_shared': False, 'pending_shared': [], 'context_team_id': 'T3GD0HY3H', 'updated': 1738244132951, 'parent_conversation': None, 'creator': 'U06PWQY0ZND', 'is_ext_shared': False, 'shared_team_ids': ['T3GD0HY3H'], 'pending_connected_team_ids': [], 'is_member': True, 'last_read': '0000000000.000000', 'topic': {'value': '', 'creator': '', 'last_set': 0}, 'purpose': {'value': '', 'creator': '', 'last_set': 0}, 'previous_names': [], 'priority': 0}}
+2025-01-30 15:35:33,324 [INFO] src.helperFunctions.slack_utils: Channel created successfully. Channel ID: C08AKKH310X
+2025-01-30 15:35:33,577 [INFO] src.helperFunctions.slack_utils: Bot enabled to join the channel: C08AKKH310X
+2025-01-30 15:35:35,885 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C08AKKH310X
+2025-01-30 15:35:35,885 [INFO] src.routers.incident: Posted message to incident channel incident-so-1700
+2025-01-30 15:35:36,172 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID C07GL77APRS
+2025-01-30 15:35:36,172 [INFO] src.routers.incident: Posted message to general outages channel
+2025-01-30 15:35:36,533 [INFO] src.helperFunctions.slack_utils: Message posted to Slack channel ID CFB5BC1PT
+2025-01-30 15:35:36,533 [INFO] src.routers.incident: Posted message to Play by Play Aggregation team channel
+2025-01-30 15:35:37,099 [INFO] httpx: HTTP Request: POST https://api.statuspage.io/v1/pages/x0c3bgkzj0yw/incidents "HTTP/1.1 201 Created"
+2025-01-30 15:35:37,100 [INFO] root: Statuspage response: 201 - {"id":"8qyjy1ll3bj3","components":[{"id":"jmq3t1734kz6","page_id":"x0c3bgkzj0yw","group_id":null,"created_at":"2024-10-18T08:52:40Z","updated_at":"2025-01-30T13:35:36Z","group":false,"name":"API integraiton","description":"Incident managament application","position":3,"status":"degraded_performance","showcase":true,"only_show_if_degraded":false,"automation_email":"component+9d11164f9dab4617af9ee72f9832dedf@notifications.statuspage.io","start_date":"2024-10-18"}],"created_at":"2025-01-30T13:35:36Z","impact":"minor","impact_override":null,"incident_updates":[{"id":"8rvzjx2bhcbm","incident_id":"8qyjy1ll3bj3","affected_components":[{"code":"jmq3t1734kz6","name":"API integraiton","old_status":"operational","new_status":"degraded_performance"}],"body":"*Incident Summary:*\n----------------------------------\n*SO Number:* SO-1700\n*Severity Level:* None\n*Affected Products:* BetBuilder\n*Suspected Teams:* Play by Play Aggregation\n*Start Time:* 2025-01-01 02:00:00\n*Affected Components:* \n\n*Additional Details:*\n----------------------------------\n*Description:* Not an actual incident\n*Message:* Not an actual incident\n*Customer Affected:* Yes","created_at":"2025-01-30T13:35:36.935Z","custom_tweet":null,"deliver_notifications":true,"display_at":"2025-01-30T13:35:36.935Z","status":"investigating","tweet_id":null,"twitter_updated_at":null,"updated_at":"2025-01-30T13:35:36.935Z","wants_twitter_update":false}],"metadata":{},"monitoring_at":null,"name":"🚨 Incident Report: SO-1700 🚨","page_id":"x0c3bgkzj0yw","postmortem_body":null,"postmortem_body_last_updated_at":null,"postmortem_ignored":false,"postmortem_notified_subscribers":false,"postmortem_notified_twitter":false,"postmortem_published_at":null,"resolved_at":null,"scheduled_auto_completed":false,"scheduled_auto_in_progress":false,"scheduled_for":null,"auto_transition_deliver_notifications_at_end":null,"auto_transition_deliver_notifications_at_start":null,"auto_transition_to_maintenance_state":null,"auto_transition_to_operational_state":null,"scheduled_remind_prior":false,"scheduled_reminded_at":null,"scheduled_until":null,"shortlink":"https://stspg.io/s5hqxfbrx9jf","status":"investigating","updated_at":"2025-01-30T13:35:36Z","reminder_intervals":null}
+2025-01-30 15:35:37,108 [INFO] root: Statuspage incident created succesfully with and id of 8qyjy1ll3bj3
+2025-01-30 15:35:37,108 [ERROR] src.routers.incident: Unexpected error creating Statuspage incident for SO SO-1700: 'StatuspageCreationResponse' object has no attribute 'get'
+2025-01-30 15:35:37,110 [INFO] src.helperFunctions.opsgenie: Final Payload Being Sent to OpsGenie:
+2025-01-30 15:35:37,110 [INFO] src.helperFunctions.opsgenie: {
+  "message": "Service Outage Alert",
+  "description": "A new incident has been created regarding a service outage.\n\nDescription:\nNot an actual incident\nFor more details, you can check the Jira issue here: https://geniussports.atlassian.net/browse/SO-1700",
+  "priority": "P1",
+  "tags": [
+    "SOS"
+  ],
+  "responders": [
+    {
+      "type": "team",
+      "name": "Play by Play Aggregation"
+    }
+  ]
+}
+2025-01-30 15:35:37,110 [INFO] src.helperFunctions.opsgenie: Creating OpsGenie alert for incident SO-1700
+2025-01-30 15:35:37,518 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Status Code: 202
+2025-01-30 15:35:37,518 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Headers: {'Content-Type': 'application/json;charset=UTF-8', 'Transfer-Encoding': 'chunked', 'Connection': 'keep-alive', 'Date': 'Thu, 30 Jan 2025 13:35:37 GMT', 'X-Response-Time': '0.006', 'X-Ratelimit-State': 'OK', 'Og-Apigw-Request-Id': '15d72631-7dd0-4ebe-8386-b393a91cdd4a', 'Server': 'AtlassianEdge', 'X-Content-Type-Options': 'nosniff', 'X-Xss-Protection': '1; mode=block', 'Atl-Traceid': '180d4435325c42a6ab7245f82c530d61', 'Atl-Request-Id': '180d4435-325c-42a6-ab72-45f82c530d61', 'Strict-Transport-Security': 'max-age=63072000; preload', 'Report-To': '{"endpoints": [{"url": "https://dz8aopenkvv6s.cloudfront.net"}], "group": "endpoint-1", "include_subdomains": true, "max_age": 600}', 'Nel': '{"failure_fraction": 0.001, "include_subdomains": true, "max_age": 600, "report_to": "endpoint-1"}', 'Vary': 'Accept-Encoding', 'Content-Encoding': 'gzip', 'Server-Timing': 'atl-edge;dur=309,atl-edge-internal;dur=3,atl-edge-upstream;dur=307,atl-edge-pop;desc="aws-eu-central-1"', 'X-Cache': 'Miss from cloudfront', 'Via': '1.1 a481094379fbeeb96ddc8b0f96f0ce90.cloudfront.net (CloudFront)', 'X-Amz-Cf-Pop': 'HEL50-C2', 'X-Amz-Cf-Id': 'TDgD823XKjQwG_FnTFZBR5aAMknJ-mfrcU3wwz6bfPMrszwe1mYrjg=='}
+2025-01-30 15:35:37,518 [INFO] src.helperFunctions.opsgenie: OpsGenie Response Body: {"result":"Request will be processed","took":0.006,"requestId":"af69c2fe-5e4e-4427-ae69-00f56bade01c"}
+2025-01-30 15:35:37,519 [INFO] src.helperFunctions.opsgenie: OpsGenie Response JSON: {
+  "result": "Request will be processed",
+  "took": 0.006,
+  "requestId": "af69c2fe-5e4e-4427-ae69-00f56bade01c"
+}
+2025-01-30 15:35:37,519 [INFO] src.helperFunctions.opsgenie: Alert created successfully
+2025-01-30 15:35:37,519 [ERROR] src.routers.incident: Error creating OpsGenie alert: 'dict' object has no attribute 'json'
+2025-01-30 15:35:37,519 [INFO] src.routers.incident: Incident creation process completed
